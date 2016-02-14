@@ -1,0 +1,83 @@
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdio.h>
+
+
+int main(){
+
+//Set up socket for sending
+
+	int  destination_port = 30000;
+	char destination_ip[] = "129.241.187.255";
+	
+	int send_sock = socket(AF_INET, SOCK_DGRAM, 0);
+	
+	struct sockaddr_in send_addr;
+	send_addr.sin_family = AF_INET;
+	send_addr.sin_port = htons(destination_port);
+	inet_aton(destination_ip, &send_addr.sin_addr); 
+	
+	//Allow for reuse
+	int option_lvl = 1;
+	if(setsockopt(send_sock, SOL_SOCKET, SO_REUSEADDR,(void*)&option_lvl, sizeof(option_lvl)) < 0){
+		printf("setsockopt(SO_REUSEADDR) failed.\n");
+	}
+	if(setsockopt(send_sock, SOL_SOCKET, SO_REUSEPORT,(void*)&option_lvl, sizeof(option_lvl)) < 0){
+		printf("setsockopt(SO_REUSEPORT) failed.\n");
+	}
+	
+	//Bind
+	int bind_status_send = bind(send_sock, (struct sockaddr*) &send_addr, sizeof(send_addr));
+	if(bind_status_send != 0){
+		printf("Failed to bind sender.\nERROR: %s\n", strerror(errno));
+	}
+	
+	char send_buffer[1024] = "Spam egg sausage and spam";
+	
+//Set up socket for recieving
+	int rec_port = 30000;
+	
+	int rec_sock = socket(AF_INET, SOCK_DGRAM, 0);
+	
+	struct sockaddr_in rec_addr;
+	rec_addr.sin_family = AF_INET;
+	rec_addr.sin_port = htons(rec_port);
+	rec_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	
+	int bind_status_rec = bind(rec_sock, (struct sockaddr*) &rec_addr, sizeof(rec_addr));
+	if(bind_status_rec < 0){
+		printf("Failed to bind receiver.\nERROR: %s\n", strerror(errno));
+	}
+	
+	//Allow for reuse
+	if(setsockopt(rec_sock, SOL_SOCKET, SO_REUSEADDR,(void*)&option_lvl, sizeof(option_lvl)) < 0){
+		printf("setsockopt(SO_REUSEADDR) failed.\n");
+	}
+	if(setsockopt(rec_sock, SOL_SOCKET, SO_REUSEPORT,(void*)&option_lvl, sizeof(option_lvl)) < 0){
+		printf("setsockopt(SO_REUSEPORT) failed.\n");
+	}
+	
+	char rec_buffer[1024];
+	
+//Use socket
+	while(1){
+		
+		//Clear buffer
+		for(int i=0;i<40;i++){rec_buffer[i]=0;}
+		
+		//Recieve message
+		if(recv(rec_sock, rec_buffer, 1024, 0)){
+			printf("Message: %s\n", rec_buffer);
+		}
+		
+		//Send message
+		sleep(1);
+		sendto(send_sock, send_buffer, 1024, 0, (struct sockaddr*) &send_addr, sizeof(send_addr));
+		
+	}
+	return 0;
+}
