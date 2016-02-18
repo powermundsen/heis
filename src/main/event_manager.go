@@ -3,32 +3,33 @@ package main
 import(
 	"runtime"
 	"fmt"
-	."controller"
-	."network"
-	."driver"
+	"controller"
+	"network/network_handler"
+	"driver"
 	)
 
 
 const N_FLOOR int = 4
 
-
+/*
 type externalOrder struct{	
 	new_order 		bool 
 	executed_order 	bool
 	floor 			int
 	direction 		int 
 }
-
+*/
 
 type internalOrder struct{
 	floor int 
 }
-
+/*
 type costInfo  struct{
 	cost 	int
 	floor 	int 
 	dir 	bool
 }
+*/
 
 func main(){
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -37,11 +38,11 @@ func main(){
 	currentFloorChan 	:= make(chan int)
 	timerChan 			:= make(chan int)
 	dirChan				:= make(chan int)
-	shareOrderChan	 	:= make(chan externalOrder)
-	receivedOrderChan	:= make(chan externalOrder)
-	shareCostChan		:= make(chan costInfo)
-	receivedCostChan	:= make(chan costInfo)
-	newExternalOrderChan:= make(chan externalOrder)
+	shareOrderChan	 	:= make(chan network.ExternalOrder)
+	receivedOrderChan	:= make(chan network.ExternalOrder)
+	shareCostChan		:= make(chan network.CostInfo)
+	receivedCostChan	:= make(chan network.CostInfo)
+	newExternalOrderChan:= make(chan network.ExternalOrder)
 	newInternalOrderChan 	:= make(chan internalOrder)
 
 	
