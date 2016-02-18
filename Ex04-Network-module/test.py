@@ -1,3 +1,0 @@
-
-def printing():
-	print 'lol'
