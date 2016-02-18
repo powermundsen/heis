@@ -11,7 +11,7 @@ import(
 )
 
 
-
+/*
 type externalOrder struct{	
 	new_order 		bool 
 	executed_order 	bool
@@ -24,7 +24,7 @@ type costInfo  struct{
 	floor 		int 
 	direction 	int
 }
-
+*/
 
 
 var broadcast_order_conn	*net.UDPConn
