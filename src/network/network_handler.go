@@ -1,4 +1,4 @@
-package network_handler
+package network
 
 import(
 	_ "fmt"
@@ -11,20 +11,20 @@ import(
 )
 
 
-/*
-type externalOrder struct{	
+
+type ExternalOrder struct{	
 	new_order 		bool 
 	executed_order 	bool
 	floor 			int
 	direction 		int 
 }
 
-type costInfo  struct{
+type CostInfo  struct{
 	cost 		int
 	floor 		int 
 	direction 	int
 }
-*/
+
 
 
 var broadcast_order_conn	*net.UDPConn
@@ -38,7 +38,7 @@ const PORTNUM_ORDER 	= ":7100"
 const PORTNUM_COST		= ":8100"	
 const NUMBER_OF_BROADCAST = 5
 
-func InitNetworkHandler(shareOrderChan chan externalOrder,receivedOrderChan chan externalOrder,shareCostChan chan costInfo,receivedCostChan chan costInfo){
+func InitNetworkHandler(shareOrderChan chan ExternalOrder,receivedOrderChan chan ExternalOrder,shareCostChan chan CostInfo,receivedCostChan chan CostInfo){
 	if (initSockets(BROADCAST_IP,PORTNUM_ORDER,PORTNUM_COST) == false){ 
 		return
 	}else{
@@ -46,7 +46,7 @@ func InitNetworkHandler(shareOrderChan chan externalOrder,receivedOrderChan chan
 	}
 }
 
-func networkHandler(shareOrderChan chan externalOrder,receivedOrderChan chan externalOrder,shareCostChan chan costInfo,receivedCostChan chan costInfo){
+func networkHandler(shareOrderChan chan ExternalOrder,receivedOrderChan chan ExternalOrder,shareCostChan chan CostInfo,receivedCostChan chan CostInfo){
 	
 
 	go listenForExternalOrder(receivedOrderChan)
@@ -128,9 +128,9 @@ func initSockets(BROADCAST_IP string, PORTNUM_COST string, PORTNUM_ORDER string)
 	return true 
 }
 
-func listenForExternalOrder(receivedOrderChan chan externalOrder){
+func listenForExternalOrder(receivedOrderChan chan ExternalOrder){
 	buffer := make([] byte, 1024)
-	var external_order externalOrder
+	var external_order ExternalOrder
 
 	for {
 		len,received_ip,err := receive_order_conn.ReadFromUDP(buffer)
@@ -145,7 +145,7 @@ func listenForExternalOrder(receivedOrderChan chan externalOrder){
 	defer receive_order_conn.Close() 
 }
 
-func broadcastExternalOrder(external_order externalOrder){
+func broadcastExternalOrder(external_order ExternalOrder){
 	buffer, err := json.Marshal(external_order)
 	if err != nil{log.Println("Error with Marshal in broadcastExternalOrder() \t",err)}
 	for i:=0; i < NUMBER_OF_BROADCAST; i++{
@@ -154,9 +154,9 @@ func broadcastExternalOrder(external_order externalOrder){
 	}
 }
 
-func listenForCostUpdate(receivedCostChan chan costInfo){
+func listenForCostUpdate(receivedCostChan chan CostInfo){
 	buffer := make([] byte, 1024)
-	var cost_info costInfo
+	var cost_info CostInfo
 
 	for {
 		len,received_ip,err := receive_cost_conn.ReadFromUDP(buffer)
@@ -170,7 +170,7 @@ func listenForCostUpdate(receivedCostChan chan costInfo){
 	}
 	defer receive_cost_conn.Close()
 }
-func broadcastCostUpdate(cost_info costInfo){
+func broadcastCostUpdate(cost_info CostInfo){
 	buffer, err := json.Marshal(cost_info)
 	if err != nil{log.Println("Error with Marshal in broadcastCostUpdate() \t",err)}
 	for i:=0; i < NUMBER_OF_BROADCAST; i++{
