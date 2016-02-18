@@ -11,12 +11,14 @@ import(
 
 const N_FLOOR int = 4
 
+
 type externalOrder struct{	
 	new_order 		bool 
 	executed_order 	bool
 	floor 			int
 	direction 		int 
 }
+
 
 type internalOrder struct{
 	floor int 
@@ -43,12 +45,12 @@ func main(){
 	newInternalOrderChan 	:= make(chan internalOrder)
 
 	
-	if (Elevator_init() == false){
+	if (Elevator_init() == 0){
 		fmt.Println("Could not connect to IO")
 		return
 	}
 	InitNetworkHandler(shareOrderChan, receivedOrderChan, shareCostChan, receivedCostChan)
-	InitOrderManager(shareOrderChan,receivedOrderChan,shareCostChan,receivedCostChan,newExternalOrderChan,newInternalOrderChan, dirChan)
+	InitOrderManager(shareOrderChan, receivedOrderChan, shareCostChan, receivedCostChan, newExternalOrderChan, newInternalOrderChan, dirChan)
 	InitElevController(N_FLOOR, nextFloorChan, currentFloorChan, timerChan, dirChan)
 	go listenForExternalOrders(externalOrderChan)
 	go listenForInternalOrders(internalOrderChan)

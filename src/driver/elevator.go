@@ -22,8 +22,8 @@ const (
 	BUTTON_INSIDE_COMMAND Button = 2
 )
 
-func Elevator_init(){
-	C.elev_init()
+func Elevator_init() int {
+	return int(C.elev_init())
 }
 
 func Elevator_set_motor_direction(direction Motor_direction){
