@@ -49,7 +49,7 @@ func InitNetworkHandler(shareOrderChan chan ExternalOrder,receivedOrderChan chan
 func networkHandler(shareOrderChan chan ExternalOrder,receivedOrderChan chan ExternalOrder,shareCostChan chan CostInfo,receivedCostChan chan CostInfo){
 	
 
-	go listenForExternalOrder(receivedOrderChan)
+	go ListenForExternalOrder(receivedOrderChan)
 	go listenForCostUpdate(receivedCostChan)
 
 	for {
@@ -128,7 +128,7 @@ func initSockets(BROADCAST_IP string, PORTNUM_COST string, PORTNUM_ORDER string)
 	return true 
 }
 
-func listenForExternalOrder(receivedOrderChan chan ExternalOrder){
+func ListenForExternalOrder(receivedOrderChan chan ExternalOrder){
 	buffer := make([] byte, 1024)
 	var external_order ExternalOrder
 
