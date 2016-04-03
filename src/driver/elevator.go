@@ -5,6 +5,7 @@ package driver
 #include "elev.h"
 */
 import "C"
+//import "fmt"
 
 type Motor_direction int
 

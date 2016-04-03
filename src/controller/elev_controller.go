@@ -15,11 +15,17 @@ var init_status  = false
 var reset_timer = false
 
 func InitElevController(N_FLOOR int, initChan chan bool, nextFloorChan chan int, currentFloorChan chan int, timerChan chan int, dirChan chan int ){
+	fmt.Println("InitElevController1")
 	init_status = true
+	fmt.Println("InitElevController2")
 	TOTAL_FLOORS = N_FLOOR
-	direction = -1					
-	dirChan <- direction 			
+	fmt.Println("InitElevController3")
+	direction = -1		
+	fmt.Println("InitElevController4")			
+	//dirChan <- direction 
+	fmt.Println("InitElevController5")			
 	Elevator_set_motor_direction(-1)
+
 
 	go elevController(nextFloorChan , currentFloorChan, timerChan, dirChan)
 }
@@ -41,9 +47,11 @@ func elevController(nextFloorChan chan int, currentFloorChan chan int, timerChan
 				}
 
 			case go_to_next_floor := <- nextFloorChan:
+				fmt.Println("Reached elevController gotonextfloor-case")
 				next_floor = go_to_next_floor
+				fmt.Println(next_floor)
 				goToFloor(timerChan)
-				dirChan <- direction
+				//dirChan <- direction
 			
 			default:
 				time.Sleep(5*time.Millisecond)	
