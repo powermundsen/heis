@@ -1,8 +1,16 @@
 package main
 
 import (
-"fmt"
+	"fmt"
 )
+
+type ExternalOrder struct {
+	ExternalOrderArray := [2][4]bool
+}
+
 func main(){
- fmt.Println("Hello, Gopher!")
+
+
+
+
 }
