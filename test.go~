@@ -1,0 +1,37 @@
+// Go 1.2
+// go run helloworld_go.go
+package main
+import (
+    . "fmt"     // Using '.' to avoid prefixing functions with their package names
+                //   This is probably not a good idea for large projects...
+    "runtime"
+    "time"
+)
+
+var i int = 0
+
+var N int = 1000000
+func someGoroutine1() {
+    for j := 0; j < N; j++ {
+        i++
+	}
+}
+
+func someGoroutine2() {
+    for j := 0; j < N; j++ {
+        i--
+	}
+}
+
+
+func main() {
+    runtime.GOMAXPROCS(runtime.NumCPU())    // I guess this is a hint to what GOMAXPROCS does...
+                                            // Try doing the exercise both with and without it!
+    go someGoroutine2()                      // This spawns someGoroutine() as a goroutine
+    go someGoroutine1()
+
+    
+    time.Sleep(100*time.Millisecond)
+    Println("Hello from main!")
+    Println(i)
+}
