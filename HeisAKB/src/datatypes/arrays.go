@@ -1,13 +1,21 @@
 package datatypes
 
 //const N_ELEVATORS = 1
-const M_FLOORS int = 4
-
 //ExternalOrderArray bool := [2][4]bool{} // Vi vil ha noe sånt men ikke som en global variabel! 
 //InternalOrderArray := [4]bool{} // Vi vil ha noe sånt men ikke som en global variabel! 
 
-var ExternalOrderArray [2][M_FLOORS] bool
-var InternalOrderArray [M_FLOORS] bool
+
+// Arrays må ha bestemt størrelse, må skrives inn med tall
+// Slices kan bestemmes til å ha n_FLOORS størrelse
+
+var ExternalOrdersArray [2][4] bool
+var InternalOrdersArray [4] bool
+
+//func ordersArrayConfig(n_FLOORS int) {
+//	var ExternalOrdersArray [2][n_FLOORS] bool
+//	var InternalOrdersArray [n_FLOORS] bool
+//}
+
 
 /*
 type ExternalOrder struct {

@@ -1,4 +1,4 @@
-package io
+package ioHandling
 
 import (
 	"datatypes"
@@ -7,18 +7,23 @@ import (
 	"time"
 )
 
-func InitIo(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int, currentFloorToElevControllerChan chan int, setInternalLightsChan chan int, setExternalLightsChan chan int) {
+var n_FLOORS int
+
+func InitIo(n_FLOORS int, newInternalOrderChan chan datatypes.InternalOrder, 
+	newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int, 
+	currentFloorToElevControllerChan chan int, setInternalLightsChan chan int, setExternalLightsChan chan int){
 	if driver.Elevator_init() == 0 {
 		fmt.Println("Could not connect to IO")
 		return
 	}
-	go ioManager(newExternalOrderChan, newInternalOrderChan, currentFloorToOrderManagerChan, 
+	n_FLOORS = n_FLOORS
+	go ioManager(newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan, 
 		currentFloorToElevControllerChan, setInternalLightsChan, setExternalLightsChan)
 }
 
-func ioManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrderChan chan datatypes.ExternalOrder, 
+func ioManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrderChan chan datatypes.ExternalOrder,
 	currentFloorToOrderManagerChan chan int, currentFloorToElevControllerChan chan int, 
-	setInternalLightsChan chan int, setExternalLightsChan chan int) {
+	setInternalLightsChan chan int, setExternalLightsChan chan int){
 	for {
 		readAllInternalButtons(newInternalOrderChan)
 		readAllExternalButtons(newExternalOrderChan)
@@ -29,21 +34,22 @@ func ioManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrd
 	}
 }
 
-func readAllInternalButtons() {
+func readAllInternalButtons(newInternalOrderChan chan datatypes.InternalOrder) {
 	var order InternalOrder
-	for floor := 1; floor < 5; floor++ { //numberOfFloors
+	for floor := 1; floor < n_FLOORS+1; floor++ { //numberOfFloors
 		if driver.Elevator_is_button_pushed(2, floor) {
 			order = floor
 			newInternalOrderChan <- order
+		}
 	}
 }
 
-func readAllExternalButtons() {
+func readAllExternalButtons(newExternalOrderChan chan datatypes.ExternalOrder){
 	var order ExternalOrder
 	order.new_order = true
 	order.executed_order = false
 
-	for floor := 1; floor < 5; floor++ {
+	for floor := 1; floor < n_FLOORS+1; floor++ {
 		for button := 0; button < 2; button++ {
 			if driver.Elevator_is_button_pushed(button, floor) {
 				order.floor = floor
@@ -62,15 +68,15 @@ func readCurrentFloor(currentFloorToOrderManagerChan chan int, currentFloorToEle
 }
 
 func setExternalOrderLights(setExternalLightsChan chan []int) {
-	for i:= 0; i < datatypes.M_FLOORS+1; i++ {
+	for i:= 0; i < n_FLOORS+1; i++ {
 		driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, i, setExternalLightsChan[1][i])
 		driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, i, setExternalLightsChan[2][i]) //[M_FLOORS+i]
 	}
 }
 
-func setInternalOrderLights(setInternalLightsChan chan int) {
+func setInternalOrderLights(setInternalLightsChan chan []int) {
 	//size := len(setInternalLightsChan) //kan fjernes
-	for i := 0; i < datatypes.M_FLOORS+1; i++ {
+	for i := 0; i < n_FLOORS+1; i++ {
 		driver.Elecator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, i, setInternalLightsChan[i])
 	}
 

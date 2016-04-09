@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const N_FLOOR int = 4
+const n_FLOORS int = 4
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -29,7 +29,7 @@ func main() {
 
 	//network.InitNetworkHandler(shareOrderChan, receivedOrderChan, shareCostChan, receivedCostChan)
 	//manager.InitOrderManager(shareOrderChan, receivedOrderChan, shareCostChan, receivedCostChan, newExternalOrderChan, newInternalOrderChan, dirChan)
-	controller.InitElevController(N_FLOOR, initChan, nextFloorChan, currentFloorChan, timerChan, dirChan) //initChan lagt til for fun
+	controller.InitElevController(n_FLOORS, initChan, nextFloorChan, currentFloorChan, timerChan, dirChan) //initChan lagt til for fun
 	//go network.ListenForExternalOrders(receivedOrderChan) //go network.ListenForExternalOrders(externalOrderChan)
 	//go network.ListenForInternalOrders(receivedOrderChan) //finner ikke network.ListenForInternalOrder(internalOrderChan)
 

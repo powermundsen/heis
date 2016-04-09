@@ -6,7 +6,7 @@ import(
 	."driver"
 )
 
-var TOTAL_FLOORS int  
+var n_FLOORS int  
 var current_floor int
 var next_floor int
 var direction int 
@@ -14,11 +14,11 @@ var door_open = false
 var init_status  = false
 var reset_timer = false
 
-func InitElevController(N_FLOOR int, initChan chan bool, nextFloorChan chan int, currentFloorChan chan int, timerChan chan int, dirChan chan int ){
+func InitElevController(n_FLOORS int, initChan chan bool, nextFloorChan chan int, currentFloorChan chan int, timerChan chan int, dirChan chan int ){
 	fmt.Println("InitElevController1")
 	init_status = true
 	fmt.Println("InitElevController2")
-	TOTAL_FLOORS = N_FLOOR
+	n_FLOORS = n_FLOORS
 	fmt.Println("InitElevController3")
 	direction = -1		
 	fmt.Println("InitElevController4")			
@@ -92,7 +92,7 @@ func floorReached(timerChan chan int){
 		door_open = true
 		go startDoorTimer(timerChan)					
 		Elevator_set_door_open_lamp(1)
-		if current_floor == TOTAL_FLOORS{
+		if current_floor == n_FLOORS{
 			direction = -1				
 		}else if current_floor == 1{
 			direction = 1				
