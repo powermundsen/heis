@@ -190,6 +190,7 @@ func broadcastCostUpdate(cost_info CostInfo){
 	}
 }
 
+
 func clearBuffer(buffer []byte, len int) []byte {
 	var clear uint8
 	clear = 0

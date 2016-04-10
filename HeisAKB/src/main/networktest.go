@@ -28,16 +28,6 @@ func main(){
 
 	network.InitNetworkHandler(shareOrderChan, receivedOrderChan, shareCostChan, receivedCostChan)
 
-	
-	/*
-	1. lag tråd som lytter til receivedOrderChan for alltid
-			- Når noe kommer på kanalen
-			- Se om det allerede ligger inne
-				- Om det ligger inne, ikke gjør noe
-				- Om den ikke ligger inne
-					- Legg til i orderslice
-	
-	*/
 
 	//Deklarerer slice til bruk med ordre
 	orders := make([]datatypes.ExternalOrder, 0) // Denne har null som argument fordi den er tom
@@ -45,33 +35,17 @@ func main(){
 	//Skriv ut alle meldingene som kommer inn på kanalen recievedOrderChan mens programmet lever
 	go func () {
 		for {
-			//Lagre melding til en variabel
-			neworder := <-receivedOrderChan
-
-			//Siden orders er tom må vi ha en sjekk for å se om vi skal lege til første element
-			//Hvis den ikke er tom søker vi iterativt gjennom den for å se ettter lignende ordre
-			if len(orders) == 0{
-				orders = append(orders, neworder)
-			} else {
-				for items := range orders {
-					if orders[items] != neworder  {
-						orders = append(orders, neworder)
-					} 
-				}
-			}
-		fmt.Println("Mottatt meldling er:")
-		fmt.Println(neworder)
+			addNewExternalOrdersToSlice(receivedOrderChan, &orders)
 		}
 	}()
 
 
 	//Send en testordre
-	ex_order := datatypes.ExternalOrder{New_order:false, Executed_order: true, Floor : 2, Direction: 1}
-	network.BroadcastExternalOrder(ex_order)
-
-
-	time.Sleep(time.Second * 2)
-
+	for i := 0; i < 5; i++ {
+		ex_order := datatypes.ExternalOrder{New_order:false, Executed_order: true, Floor : 2, Direction: 1}
+		network.BroadcastExternalOrder(ex_order)
+		time.Sleep(time.Millisecond * 1)
+	}
 	//Send en testordre til
 	ex_order1 := datatypes.ExternalOrder{New_order:true, Executed_order: true, Floor : 2, Direction: 1}
 	network.BroadcastExternalOrder(ex_order1)
@@ -80,48 +54,70 @@ func main(){
 
 	fmt.Println(orders)
 
-
-
-
-
 	fmt.Println("Lager/oppdaterer fil til heisordre")
 
-	var ( //Kan flyttes øverst tror jeg
-    	newFile *os.File
-   		err     error
-	)
-	//Lager ny fil
-	newFile, err = os.Create("ordrebackup.txt")
-    if err != nil {
-        log.Fatal(err)
-    }
-    log.Println(newFile)
-    newFile.Close()
-
-    //Skriver med Quick write to file 
-    fmt.Println(orders)
-    //Konverterer til json
-    buffer, _ := json.Marshal(orders)
-    //Skriver til fil
-    err = ioutil.WriteFile("ordrebackup.txt", []byte(buffer), 0777)
-    if err != nil {
-        log.Fatal(err)
-    }
-    //Tester å gjennopprette fra fil så jeg sletter slice
-    fmt.Println("Tester å hente inn igjen data fra fil")
+	//createOrderBackupFile()	//Den er muligvis unødvendig. WriteFile i backupOrders lager også en fil
+	backupOrders(orders)
+	fmt.Println("Tester å hente inn igjen data fra fil")
     fmt.Println("Setter orders til 0: ")
     orders = make([]datatypes.ExternalOrder, 0)
     fmt.Println(orders)
+	restoreOrders(&orders)
+	fmt.Println("Skriver ut info hentet fra fil")
+    fmt.Println(orders)
+    
 
-    //Decoder fil og legger inn igjen i slices
-    buffer, _ = ioutil.ReadFile("ordrebackup.txt")
-    err = json.Unmarshal(buffer, &orders)
+}
+
+func restoreOrders(orders *[]datatypes.ExternalOrder){
+    buffer, _ := ioutil.ReadFile("orderbackup.txt")
+    err := json.Unmarshal(buffer, orders)
     if err != nil {
 		fmt.Println("error:", err)
 	}
-    fmt.Println("Skriver ut info hentet fra fil")
+}
+
+func backupOrders(orders []datatypes.ExternalOrder){
     fmt.Println(orders)
+    buffer, _ := json.Marshal(orders)
+    err := ioutil.WriteFile("orderbackup.txt", []byte(buffer), 0777)
+    if err != nil {
+        log.Fatal(err)
+    }
+}
 
-	
+func createOrderBackupFile(){
+	var (
+    	newFile *os.File
+   		err     error
+	)
 
+	newFile, err = os.Create("orderbackup.txt")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    log.Println(newFile)
+    newFile.Close()
+}
+
+func addNewExternalOrdersToSlice(receivedOrderChan chan datatypes.ExternalOrder, orders *[]datatypes.ExternalOrder){
+	neworder := <-receivedOrderChan
+
+	ordersCopy := make([]datatypes.ExternalOrder, 0)		//Kopierer referert slice for å arbeide med den
+	ordersCopy = *orders
+
+	if len(ordersCopy) == 0{
+		ordersCopy= append(ordersCopy, neworder)
+
+	} else {
+		for items := range ordersCopy {
+			if ordersCopy[items] != neworder  {
+				ordersCopy = append(ordersCopy, neworder)
+			} 
+		}
+	}
+	*orders = ordersCopy
+	fmt.Println("Mottatt meldling er:")
+	fmt.Println(neworder)
 }
