@@ -39,6 +39,7 @@ func readAllInternalButtons(newInternalOrderChan chan datatypes.InternalOrder) {
 	var order datatypes.InternalOrder
 	for floor := 1; floor < n_FLOORS+1; floor++ {
 		if driver.Elevator_is_button_pushed(driver.BUTTON_INSIDE_COMMAND, floor) {
+			datatypes.InternalOrdersSlice[floor] = 1
 			order.Floor = floor
 			newInternalOrderChan <- order
 		}
@@ -50,11 +51,12 @@ func readAllExternalButtons(newExternalOrderChan chan datatypes.ExternalOrder){
 	order.New_order = true
 	order.Executed_order = false
 
-	for floor := 1; floor < n_FLOORS+1; floor++ {
-		for button := driver.BUTTON_OUTSIDE_UP; button <= driver.BUTTON_OUTSIDE_DOWN; button++ {
-			if driver.Elevator_is_button_pushed(button, floor) {
+	for button := driver.BUTTON_OUTSIDE_UP; button <= driver.BUTTON_OUTSIDE_DOWN; button++ {
+		for floor := 0; floor < n_FLOORS; floor++ {
+			if driver.Elevator_is_button_pushed(button, floor+1) {
+				datatypes.ExternalOrdersSlice[(n_FLOORS*int(button)) + floor] = 1
 				order.Floor = floor
-				order.Direction = int(button) // denne er litt rar
+				order.Direction = int(button)
 				newExternalOrderChan <- order
 			}
 		}
@@ -64,26 +66,25 @@ func readAllExternalButtons(newExternalOrderChan chan datatypes.ExternalOrder){
 
 func readCurrentFloor(currentFloorToOrderManagerChan chan int, currentFloorToElevControllerChan chan int) {
 	currentFloor := driver.Elevator_get_floor_sensor_signal()
-	driver.Elevator_set_floor_indicator(currentFloor)
+	if currentFloor != -1 {
+		driver.Elevator_set_floor_indicator(currentFloor)
+	}
 	currentFloorToOrderManagerChan <- currentFloor
 	currentFloorToElevControllerChan <- currentFloor
 }
 
-// Hvordan skal jeg lese slicet sendt på setExternalLightsChan??
-/*
 func setExternalOrderLights(setExternalLightsChan chan []int) {
-	lightArray := make(chan []int)
-	lightArray <- setExternalLightsChan
+	lightSlice := <- setExternalLightsChan
 	for i:= 0; i < n_FLOORS+1; i++ {
-		driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, i, lightArray[n_FLOORS])
-		driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, i, setExternalLightsChan[n_FLOORS+i])
+		driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, i, lightSlice[n_FLOORS])
+		driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, i, lightSlice[n_FLOORS+i])
 	}
 }
 
 func setInternalOrderLights(setInternalLightsChan chan []int) {
+	lightSlice := <- setInternalLightsChan
 	for i := 0; i < n_FLOORS+1; i++ {
-		driver.Elecator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, i, setInternalLightsChan[i])
+		driver.Elevator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, i, lightSlice[i])
 	}
 
 }
-*/

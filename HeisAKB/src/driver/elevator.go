@@ -48,11 +48,11 @@ func Elevator_set_stop_lamp(value int){
 }
 
 func Elevator_is_button_pushed(button Button, floor int) bool {
-	return (C.elev_get_button_signal(C.elev_button_type_t(button), C.int(floor)) != 0)
+	return (C.elev_get_button_signal(C.elev_button_type_t(button), C.int(floor)) != 0) //C.elev returnerer int
 }
 
 func Elevator_get_floor_sensor_signal() int {
-	return int(C.elev_get_floor_sensor_signal())
+	return int(C.elev_get_floor_sensor_signal()) //kan returnere -1
 }
 
 func Elevator_get_stop_signal() bool {

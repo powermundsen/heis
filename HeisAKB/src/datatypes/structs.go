@@ -10,7 +10,7 @@ type ExternalOrder struct {
 	New_order      bool
 	Executed_order bool
 	Floor          int
-	Direction      int //retning opp = 1 og retning ned = 2?? hvordan vil vi ha det?
+	Direction      int //retning opp = 0 og retning ned = 1
 }
 
 type CostInfo struct {

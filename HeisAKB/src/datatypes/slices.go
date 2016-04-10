@@ -14,7 +14,7 @@ func OrdersSlicesInit(n_FLOORS int) {
 	for i := range(InternalOrdersSlice){
 		ExternalOrdersSlice[i] = 0
 		ExternalOrdersSlice[n_FLOORS+i] = 0
-		InternalOrdersSlice[i] = 0
+		InternalOrdersSlice[i] = 1
 		
 	}
 }

@@ -41,10 +41,13 @@ func main() {
 			}
 
 	}	*/
+
 	//Registrer knapper
 	fmt.Println("Init done")
 	manager.InitManager(newInternalOrderChan, nextFloorChan)
 	for {
+		driver.Elevator_set_motor_direction(-1)
+
 		fmt.Println("Reached for-loop")
 		if driver.Elevator_is_button_pushed(2, 1) {
 			fmt.Println("Button 2 pushed")
