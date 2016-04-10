@@ -7,12 +7,17 @@ import(
 	"encoding/json"
 	"log"
 	"strconv"
-	"datatypes"
 
 )
 
 
 
+type ExternalOrder struct{	
+	new_order 		bool 
+	executed_order 	bool
+	floor 			int
+	direction 		int 
+}
 
 type CostInfo  struct{
 	cost 		int
@@ -31,9 +36,9 @@ var receive_cost_conn		*net.UDPConn
 const BROADCAST_IP		= "255.255.255.255"
 const PORTNUM_ORDER 	= ":7100"	
 const PORTNUM_COST		= ":8100"	
-const NUMBER_OF_BROADCAST = 1
+const NUMBER_OF_BROADCAST = 5
 
-func InitNetworkHandler(shareOrderChan chan datatypes.ExternalOrder,receivedOrderChan chan datatypes.ExternalOrder,shareCostChan chan CostInfo,receivedCostChan chan CostInfo){
+func InitNetworkHandler(shareOrderChan chan ExternalOrder,receivedOrderChan chan ExternalOrder,shareCostChan chan CostInfo,receivedCostChan chan CostInfo){
 	if (initSockets(BROADCAST_IP,PORTNUM_ORDER,PORTNUM_COST) == false){ 
 		return
 	}else{
@@ -41,15 +46,16 @@ func InitNetworkHandler(shareOrderChan chan datatypes.ExternalOrder,receivedOrde
 	}
 }
 
-func networkHandler(shareOrderChan chan datatypes.ExternalOrder,receivedOrderChan chan datatypes.ExternalOrder,shareCostChan chan CostInfo,receivedCostChan chan CostInfo){
+func networkHandler(shareOrderChan chan ExternalOrder,receivedOrderChan chan ExternalOrder,shareCostChan chan CostInfo,receivedCostChan chan CostInfo){
+	
 
 	go ListenForExternalOrder(receivedOrderChan)
-	//go listenForCostUpdate(receivedCostChan)
+	go listenForCostUpdate(receivedCostChan)
 
 	for {
 		select{
 			case order:= <- shareOrderChan:	
-				BroadcastExternalOrder(order)
+				broadcastExternalOrder(order)
 
 			case cost := <- shareCostChan:
 				broadcastCostUpdate(cost)										
@@ -70,11 +76,12 @@ func initSockets(BROADCAST_IP string, PORTNUM_COST string, PORTNUM_ORDER string)
 		log.Println(" ResolveUDPAddr failed",err) 
 	}
 
-	broadcast_order_conn,err=net.DialUDP("udp",nil,broadcast_udp_addr)
+	broadcast_order_conn,err:=net.DialUDP("udp",nil,broadcast_udp_addr)
 	if err != nil{
 		log.Println("Could not establish UDP connection. Enter single eleveator mode. \n",err)
 		return false 
 	}
+	broadcast_order_conn = broadcast_order_conn
 
 
 	//Create broadcast socket for cost updates
@@ -88,6 +95,7 @@ func initSockets(BROADCAST_IP string, PORTNUM_COST string, PORTNUM_ORDER string)
 		log.Println("Could not establish UDP connection. Enter single eleveator mode. \n",err)
 		return false 
 	}
+	broadcast_cost_conn = broadcast_cost_conn
 
 
 	//Create receiver socket for external orders
@@ -96,12 +104,12 @@ func initSockets(BROADCAST_IP string, PORTNUM_COST string, PORTNUM_ORDER string)
 		log.Println("ResolveUDPAddr failed ",err)
 	}
 
-	receive_order_conn,err = net.ListenUDP("udp", listen_addr)
+	receive_order_conn,err := net.ListenUDP("udp", listen_addr)
 	if err != nil{
 		log.Println("Could not establish UDP connection. Enter single eleveator mode. \n",err)
 		return false 
 	}
-	
+	receive_order_conn = receive_order_conn
 
 
 	//Create receiver socket for cost updates
@@ -110,18 +118,19 @@ func initSockets(BROADCAST_IP string, PORTNUM_COST string, PORTNUM_ORDER string)
 		log.Println("ResolveUDPAddr failed ",err)
 	}
 
-	receive_cost_conn,err = net.ListenUDP("udp", listen_addr)
+	receive_cost_conn,err := net.ListenUDP("udp", listen_addr)
 	if err != nil{
 		log.Println("Could not establish UDP connection. Enter single eleveator mode.\n",err)
 		return false
 	}
+	receive_cost_conn = receive_cost_conn
 
 	return true 
 }
 
-func ListenForExternalOrder(receivedOrderChan chan datatypes.ExternalOrder){
-	buffer := make([] byte, 4096)
-	var external_order datatypes.ExternalOrder
+func ListenForExternalOrder(receivedOrderChan chan ExternalOrder){
+	buffer := make([] byte, 1024)
+	var external_order ExternalOrder
 
 	for {
 		len,received_ip,err := receive_order_conn.ReadFromUDP(buffer)
@@ -130,33 +139,13 @@ func ListenForExternalOrder(receivedOrderChan chan datatypes.ExternalOrder){
 		}
 		err = json.Unmarshal(buffer[0:len], &external_order)
 		if(err != nil) {log.Println("Error with Unmarshal \t",err)}
-		receivedOrderChan <- external_order 
+		receivedOrderChan <- external_order 	
 		buffer = clearBuffer(buffer,len)	
 	}
 	defer receive_order_conn.Close() 
 }
 
-//Skal vi ha med denne her eller skal vi avgrense den? For nå har jeg kun testet network_handler med externe broadcasts
-/*
-func ListenForInternalOrder(receivedOrderChan chan InternalOrder){
-	buffer := make([] byte, 1024)
-	var internal_order InternalOrder
-
-	for {
-		len,received_ip,err := receive_order_conn.ReadFromUDP(buffer)
-		if err != nil{
-			log.Println("Not able to receive internal order from ",received_ip)
-		}
-		err = json.Unmarshal(buffer[0:len], &internal_order)
-		if(err != nil) {log.Println("Error with Unmarshal \t",err)}
-		receivedOrderChan <- internal_order 	
-		buffer = clearBuffer(buffer,len)	
-	}
-	defer receive_order_conn.Close() 
-}
-*/
-
-func BroadcastExternalOrder(external_order datatypes.ExternalOrder){
+func broadcastExternalOrder(external_order ExternalOrder){
 	buffer, err := json.Marshal(external_order)
 	if err != nil{log.Println("Error with Marshal in broadcastExternalOrder() \t",err)}
 	for i:=0; i < NUMBER_OF_BROADCAST; i++{
@@ -200,7 +189,7 @@ func clearBuffer(buffer []byte, len int) []byte {
 }
 
 func getLocalIp() net.IP {	
-	local_listen_port 	:= 8100
+	local_listen_port 	:= 7600
 	addr, _ := net.ResolveUDPAddr("udp4", "255.255.255.255:"+ strconv.Itoa(local_listen_port))
 
 	temp_conn, _ := net.DialUDP("udp4", nil, addr)
