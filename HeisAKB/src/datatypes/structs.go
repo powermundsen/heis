@@ -1,7 +1,7 @@
 package datatypes
 
 type InternalOrder struct {
-	floor int
+	Floor int
 }
 
 //Jeg endret parametrene i strukten til å ha stor bokstav, da kan vi deklarere nye instanser slik
@@ -10,11 +10,11 @@ type ExternalOrder struct {
 	New_order      bool
 	Executed_order bool
 	Floor          int
-	Direction      int
+	Direction      int //retning opp = 1 og retning ned = 2?? hvordan vil vi ha det?
 }
 
 type CostInfo struct {
-	cost      int
-	floor     int
-	direction int
+	Cost      int
+	Floor     int
+	Direction int
 }
