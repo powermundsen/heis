@@ -8,6 +8,7 @@ import (
 )
 
 var n_floors int
+var previous_floor int
 
 func InitIo(number_of_floors int, newInternalOrderChan chan datatypes.InternalOrder,
 	newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int,
@@ -17,7 +18,9 @@ func InitIo(number_of_floors int, newInternalOrderChan chan datatypes.InternalOr
 		fmt.Println("Could not connect to IO")
 		return
 	}
+	fmt.Println("IO init done")
 	n_floors = number_of_floors
+	previous_floor = -1
 	go ioManager(newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan,
 		currentFloorToElevControllerChan, setInternalLightsChan, setExternalLightsChan,
 		setDoorOpenLightChan, setMotorDirectionChan)
@@ -28,19 +31,21 @@ func ioManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrd
 	setInternalLightsChan chan []bool, setExternalLightsChan chan []bool,
 	setDoorOpenLightChan chan bool, setMotorDirectionChan chan datatypes.Direction) {
 	for {
-		fmt.Println("InitElevControllerio")
-
 		select {
 		case <-time.After(100 * time.Millisecond):
 			readAllInternalButtons(newInternalOrderChan)
 			readAllExternalButtons(newExternalOrderChan)
 			readCurrentFloor(currentFloorToElevControllerChan, currentFloorToOrderManagerChan)
+
 		case set_internal_lights := <-setInternalLightsChan:
 			setInternalOrderLights(set_internal_lights)
+
 		case set_external_lights := <-setExternalLightsChan:
 			setExternalOrderLights(set_external_lights)
+
 		case set_door_open_light := <-setDoorOpenLightChan:
 			setDoorOpenLight(set_door_open_light)
+
 		case motor_direction := <-setMotorDirectionChan:
 			fmt.Println("case motordirection")
 			setMotorDirection(motor_direction)
@@ -78,15 +83,17 @@ func readAllExternalButtons(newExternalOrderChan chan datatypes.ExternalOrder) {
 	}
 }
 
-func readCurrentFloor(currentFloorToOrderManagerChan chan int, currentFloorToElevControllerChan chan int) {
-	currentFloor := driver.Elevator_get_floor_sensor_signal()
-	if currentFloor != -1 {
-		driver.Elevator_set_floor_indicator(currentFloor)
+func readCurrentFloor(currentFloorToElevControllerChan chan int, currentFloorToOrderManagerChan chan int) {
+	current_floor := driver.Elevator_get_floor_sensor_signal()
+	if current_floor != previous_floor {
+		if current_floor != -1 {
+			driver.Elevator_set_floor_indicator(current_floor)
+		}
+		currentFloorToElevControllerChan <- current_floor
+		previous_floor = current_floor
 	}
-	//currentFloorToOrderManagerChan <- currentFloor
-	currentFloorToElevControllerChan <- currentFloor
-}
 
+}
 
 func setDoorOpenLight(set_door_open_light bool) {
 	driver.Elevator_set_door_open_lamp(set_door_open_light)
@@ -103,31 +110,44 @@ func setMotorDirection(motor_direction datatypes.Direction) {
 
 }
 
-func setExternalOrderLights(setExternalLightsChan chan []ExternalOrder) { //Skal ta inn sharedOrder Slice med external_order IKKE int
-	lightSlice := <-setExternalLightsChan
-	if len(lightSlice) == 0{
+func setInternalOrderLights(set_internal_lights []bool) {
+	for i := 0; i < n_floors+1; i++ {
+		driver.Elevator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, i, set_internal_lights[i])
+	}
+}
+
+func setExternalOrderLights(set_external_lights []bool) {
+	for i := 0; i < n_floors+1; i++ {
+		driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, i, set_external_lights[i])
+		driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, i, set_external_lights[n_floors+i])
+	}
+}
+
+/* LEGGES INN IGJEN ETTER TESTING MED BOOL-VERSJON
+
+func setExternalOrderLights(external_orders []datatypes.ExternalOrder) { //Skal ta inn sharedOrder Slice med external_order IKKE int
+	if len(external_orders) == 0 {
 		fmt.Println("No new orders that need lights changed in recieved slice")
 	} else {
-		for items := range lightSlice {
-				select {
-					case items.Direction == 1:
-						driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, items.Floor , true)
-					case items.Direction == -1:
-						driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, items.Floor , true)
-					}
+		for items := range external_orders {
+			if items.Direction == 1 {
+				driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, items.Floor, true)
+			}
+			if items.Direction == -1 {
+				driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, items.Floor, true)
+			}
 		}
 	}
 }
 
-func setInternalOrderLights(setInternalLightsChan chan []ExternalOrder) {
-	lightSlice := <-setInternalLightsChan
-	if len(lightSlice) == 0{
+func setInternalOrderLights(internal_orders []datatypes.ExternalOrder) {
+	if len(internal_orders) == 0 {
 		fmt.Println("No new orders that need lights changed in recieved slice")
 	} else {
-		for items := range lightSlice {
-				driver.Elevator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, items.Floor , true)
-			}
+		for items := range internal_orders {
+			driver.Elevator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, items.Floor, true)
 		}
+	}
 
 }
-
+*/

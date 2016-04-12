@@ -18,7 +18,7 @@ func InitOrderManager(n_FLOORS int, newInternalOrderChan chan datatypes.Internal
 	if _, err := os.Stat("privateOrdersBackup.txt"); os.IsNotExist(err) {
 		createOrderBackupFile()
 	}
-	restoreOrders(privateOrders)
+	restoreOrders(private_orders)
 
 	number_of_floors = n_FLOORS
 	next_floor = -1 //-1 betyr at det ikke er noen etasje heisen skal gå til
