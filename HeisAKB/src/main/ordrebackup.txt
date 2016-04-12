@@ -1,1 +1,1 @@
-[{"New_order":false,"Executed_order":true,"Floor":2,"Direction":1},{"New_order":true,"Executed_order":true,"Floor":2,"Direction":1}]
+[{"New_order":false,"Executed_order":true,"Floor":2,"Direction":1},{"New_order":true,"Executed_order":true,"Floor":3,"Direction":-1}]
