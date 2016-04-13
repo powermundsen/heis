@@ -12,7 +12,7 @@ var previous_floor int
 
 func InitIo(number_of_floors int, newInternalOrderChan chan datatypes.InternalOrder,
 	newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int,
-	currentFloorToElevControllerChan chan int, setInternalLightsChan chan []bool, setExternalLightsChan chan []bool,
+	currentFloorToElevControllerChan chan int, setInternalLightsChan chan []bool, setExternalLightsChan chan []datatypes.ExternalOrder,
 	setDoorOpenLightChan chan bool, setMotorDirectionChan chan datatypes.Direction) {
 	if driver.Elevator_init() == 0 {
 		fmt.Println("Could not connect to IO")
@@ -28,7 +28,7 @@ func InitIo(number_of_floors int, newInternalOrderChan chan datatypes.InternalOr
 
 func ioManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrderChan chan datatypes.ExternalOrder,
 	currentFloorToOrderManagerChan chan int, currentFloorToElevControllerChan chan int,
-	setInternalLightsChan chan []bool, setExternalLightsChan chan []bool,
+	setInternalLightsChan chan []bool, setExternalLightsChan chan []datatypes.ExternalOrder,
 	setDoorOpenLightChan chan bool, setMotorDirectionChan chan datatypes.Direction) {
 	for {
 		select {
@@ -40,8 +40,8 @@ func ioManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrd
 		case set_internal_lights := <-setInternalLightsChan:
 			setInternalOrderLights(set_internal_lights)
 
-		case set_external_lights := <-setExternalLightsChan:
-			setExternalOrderLights(set_external_lights)
+		case shared_orders := <-setExternalLightsChan:
+			setExternalOrderLights(shared_orders)
 
 		case set_door_open_light := <-setDoorOpenLightChan:
 			setDoorOpenLight(set_door_open_light)
@@ -101,13 +101,12 @@ func setDoorOpenLight(set_door_open_light bool) {
 
 func setMotorDirection(motor_direction datatypes.Direction) {
 	if motor_direction == datatypes.UP {
-		driver.Elevator_set_motor_direction(1)
+		driver.Elevator_set_motor_direction(driver.MOTOR_DIRECTION_UP)
 	} else if motor_direction == datatypes.DOWN {
-		driver.Elevator_set_motor_direction(-1)
+		driver.Elevator_set_motor_direction(driver.MOTOR_DIRECTION_DOWN)
 	} else {
-		driver.Elevator_set_motor_direction(0)
+		driver.Elevator_set_motor_direction(driver.MOTOR_DIRECTION_STOP)
 	}
-
 }
 
 func setInternalOrderLights(set_internal_lights []bool) {
@@ -116,14 +115,15 @@ func setInternalOrderLights(set_internal_lights []bool) {
 	}
 }
 
+/*
 func setExternalOrderLights(set_external_lights []bool) {
 	for i := 0; i < n_floors+1; i++ {
 		driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, i, set_external_lights[i])
 		driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, i, set_external_lights[n_floors+i])
 	}
 }
-
-/* LEGGES INN IGJEN ETTER TESTING MED BOOL-VERSJON
+*/
+//LEGGES INN IGJEN ETTER TESTING MED BOOL-VERSJON
 
 func setExternalOrderLights(external_orders []datatypes.ExternalOrder) { //Skal ta inn sharedOrder Slice med external_order IKKE int
 	if len(external_orders) == 0 {
@@ -136,10 +136,12 @@ func setExternalOrderLights(external_orders []datatypes.ExternalOrder) { //Skal 
 			if items.Direction == -1 {
 				driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, items.Floor, true)
 			}
+
 		}
 	}
 }
 
+/*
 func setInternalOrderLights(internal_orders []datatypes.ExternalOrder) {
 	if len(internal_orders) == 0 {
 		fmt.Println("No new orders that need lights changed in recieved slice")

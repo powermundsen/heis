@@ -44,8 +44,8 @@ func orderManager(newInternalOrderChan chan datatypes.InternalOrder, newExternal
 				received_order := true
 				handleSharedOrder(received_network_order, received_order := true)
 
-			case order_finnished := <- orderFinnishedChan:
-				finnished := true
+			case order_finished := <- orderFinnishedChan:
+				finished := true
 				handlePrivateOrder()
 		}
 	}
@@ -72,7 +72,7 @@ func handleSharedOrder(order datatypes.ExternalOrder, received_order bool, share
 
 }
 
-func handlePrivateOrder(order datatypes.InternalOrder, finnished bool){
+func handlePrivateOrder(order datatypes.InternalOrder, finished bool){
 	updatePrivateOrders(order)
 	findNextFloorToGoTo()
 }

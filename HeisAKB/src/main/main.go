@@ -35,7 +35,7 @@ func main() {
 	currentFloorToOrderManagerChan := make(chan int)
 	currentFloorToElevControllerChan := make(chan int)
 	setInternalLightsChan := make(chan []bool)
-	setExternalLightsChan := make(chan []bool)
+	setExternalLightsChan := make(chan []datatypes.ExternalOrder)
 	setDoorOpenLightChan := make(chan bool)
 	setMotorDirectionChan := make(chan datatypes.Direction)
 	//network.InitNetworkHandler(shareOrderChan, receivedOrderChan, shareCostChan, receivedCostChan)
