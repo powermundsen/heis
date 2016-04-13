@@ -34,7 +34,7 @@ func main() {
 	newExternalOrderChan := make(chan datatypes.ExternalOrder)
 	currentFloorToOrderManagerChan := make(chan int)
 	currentFloorToElevControllerChan := make(chan int)
-	setInternalLightsChan := make(chan []bool)
+	setInternalLightsChan := make(chan []datatypes.InternalOrder)
 	setExternalLightsChan := make(chan []datatypes.ExternalOrder)
 	setDoorOpenLightChan := make(chan bool)
 	setMotorDirectionChan := make(chan datatypes.Direction)
