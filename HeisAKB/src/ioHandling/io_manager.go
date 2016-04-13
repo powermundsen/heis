@@ -126,29 +126,31 @@ func setExternalOrderLights(set_external_lights []bool) {
 */
 //LEGGES INN IGJEN ETTER TESTING MED BOOL-VERSJON
 
-func setExternalOrderLights(external_orders datatypes.ExternalOrder) { //Skal ta inn sharedOrder Slice med external_order IKKE int
-	if len(external_orders) == 0 {
-		fmt.Println("No new orders that need lights changed in recieved slice")
-	} else {
+func setExternalOrderLights(external_orders datatypes.ExternalOrder) { 
+	if external_orders.Executed_order == true {
 		if items.Direction == 1 {
 			driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, items.Floor, true)
 		}
 		if items.Direction == -1 {
 			driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, items.Floor, true)
 		}
+	}
 
-		
+	if external_orders.Executed_order == false {
+		if items.Direction == 1 {
+			driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, items.Floor, false)
+		} else { items.Direction == -1 {
+			driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, items.Floor, false)
+		}
+		}
 	}
 }
 
 
-func setInternalOrderLights(internal_orders datatypes.ExternalOrder) {
-	if len(internal_orders) == 0 {
-		fmt.Println("No new orders that need lights changed in recieved slice")
-	} else {
+func setInternalOrderLights(internal_orders datatypes.InternalOrder) {
+	if internal_orders.Executed_order == true {
+		driver.Elevator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, items.Floor, false)
+	} else { internal_orders.Executed_order == false {
 		driver.Elevator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, items.Floor, true)
-		
 	}
-
 }
-
