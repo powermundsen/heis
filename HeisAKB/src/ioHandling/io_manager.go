@@ -92,6 +92,7 @@ func readCurrentFloor(currentFloorToElevControllerChan chan int, currentFloorToO
 			driver.Elevator_set_floor_indicator(current_floor)
 		}
 		currentFloorToElevControllerChan <- current_floor
+		currentFloorToOrderManagerChan <- current_floor
 		previous_floor = current_floor
 	}
 
