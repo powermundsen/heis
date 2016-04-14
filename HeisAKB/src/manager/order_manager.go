@@ -20,7 +20,7 @@ var current_floor int
 var shared_orders []datatypes.ExternalOrder
 var private_orders []datatypes.ExternalOrder
 
-func InitOrderManager(n_FLOORS int, newInternalOrderChan chan datatypes.InternalOrder, newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int, orderFinishedChan chan int, dirChan chan datatypes.Direction, receivedOrderChan chan datatypes.ExternalOrder, receivedCostChan chan datatypes.CostInfo, shareOrderChan chan datatypes.ExternalOrder, shareCostChan chan datatypes.CostInfo, nextFloorChan chan int) {
+func InitOrderManager(n_FLOORS int, newInternalOrderChan chan datatypes.InternalOrder, newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int, orderFinishedChan chan int, dirChan chan datatypes.Direction, receivedOrderChan chan datatypes.ExternalOrder, receivedCostChan chan datatypes.CostInfo, shareOrderChan chan datatypes.ExternalOrder, shareCostChan chan datatypes.CostInfo, nextFloorChan chan int, setInternalLightsChan chan datatypes.InternalOrder, setExternalLightsChan chan datatypes.ExternalOrder) {
 	shared_orders = make([]datatypes.ExternalOrder, 0)
 	private_orders = make([]datatypes.ExternalOrder, 0)
 
@@ -38,38 +38,57 @@ func InitOrderManager(n_FLOORS int, newInternalOrderChan chan datatypes.Internal
 	fmt.Println("Init direction is: ", direction)
 
 	go orderManager(newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan, orderFinishedChan, dirChan, receivedOrderChan, receivedCostChan,
-		shareOrderChan, shareCostChan, nextFloorChan) //mangler setExternalLightsChan
+		shareOrderChan, shareCostChan, nextFloorChan, setInternalLightsChan, setExternalLightsChan) //mangler setExternalLightsChan
 }
 
-func orderManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int, orderFinishedChan chan int, dirChan chan datatypes.Direction, receivedOrderChan chan datatypes.ExternalOrder, receivedCostChan chan datatypes.CostInfo, shareOrderChan chan datatypes.ExternalOrder, shareCostChan chan datatypes.CostInfo, nextFloorChan chan int) {
+func orderManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int, orderFinishedChan chan int, dirChan chan datatypes.Direction, receivedOrderChan chan datatypes.ExternalOrder, receivedCostChan chan datatypes.CostInfo, shareOrderChan chan datatypes.ExternalOrder, shareCostChan chan datatypes.CostInfo, nextFloorChan chan int, setInternalLightsChan chan datatypes.InternalOrder, setExternalLightsChan chan datatypes.ExternalOrder) {
 	//mangler setExternalLightsChan()
 
 	for {
 		select {
 		case new_internal_order := <-newInternalOrderChan:
 			handleInternalOrder(new_internal_order)
+			setInternalLightsChan <- new_internal_order
 
 		case new_external_order := <-newExternalOrderChan:
 			received_order := false
 			handleSharedOrder(new_external_order, received_order, shareCostChan, receivedCostChan)
+			setExternalLightsChan <- new_external_order
 
 		case received_network_order := <-receivedOrderChan:
 			received_order := true
 			handleSharedOrder(received_network_order, received_order, shareCostChan, receivedCostChan)
+			setExternalLightsChan <- received_network_order
 
 		case finished_order := <-orderFinishedChan:
-			order := datatypes.ExternalOrder{New_order: false, Executed_order: true, Floor: finished_order, Direction: int(direction)}
-			handleFinishedOrder(order, shareOrderChan)
+			external_order_up := datatypes.ExternalOrder{New_order: false, Executed_order: true, Floor: finished_order, Direction: 1}
+			external_order_down := datatypes.ExternalOrder{New_order: false, Executed_order: true, Floor: finished_order, Direction: -1}
+			internal_order := datatypes.InternalOrder{Executed_order: true, Floor: finished_order}
+
+			handleFinishedOrder(external_order_up, shareOrderChan)
+			setExternalLightsChan <- external_order_down
+			setInternalLightsChan <- internal_order
+			setExternalLightsChan <- external_order_up
 
 		case update_current_floor := <-currentFloorToOrderManagerChan:
-			current_floor = update_current_floor
+			if update_current_floor != -1 {
+				current_floor = update_current_floor
+			} else {
+				if direction == datatypes.UP {
+					current_floor++
+				} else if direction == datatypes.DOWN {
+					current_floor--
+				} else {
+					fmt.Println("manager.Case: update_current_floor: Invalid direction")
+				}
+			}
 
 		case update_direction := <-dirChan:
 			if update_direction != datatypes.STOP {
 				direction = update_direction
 			}
 
-		case <-time.After(2 * time.Second): //dette vil skape bug
+		case <-time.After(250 * time.Millisecond): //dette vil skape bug
 			nextFloorChan <- next_floor
 		}
 	}
@@ -220,10 +239,11 @@ func findNextFloorToGoTo() { //read only
 	} else {
 
 		if direction == datatypes.UP {
-			if checkUpFromCurrent(current_floor) {
+
+			if checkUpOrdersAboveCurrentFloor(current_floor) {
 				return
 			}
-			if checkDownFromTop(current_floor) {
+			if checkDownOrdersFromTopFloor(current_floor) {
 				return
 			}
 
@@ -231,20 +251,20 @@ func findNextFloorToGoTo() { //read only
 		}
 
 		if direction == datatypes.DOWN {
-			if checkDownFromCurrent(current_floor) {
+			if checkDownOrdersBelowCurrentFloor(current_floor) {
 				return
 			}
-			if checkUpFromBottom(current_floor) {
+			if checkUpOrdersFromBottomFloor(current_floor) {
 				return
 			}
 
 			direction = datatypes.UP
 
 			if direction != original_direction {
-				if checkUpFromCurrent(current_floor) {
+				if checkUpOrdersAboveCurrentFloor(current_floor) {
 					return
 				}
-				if checkDownFromTop(current_floor) {
+				if checkDownOrdersFromTopFloor(current_floor) {
 					return
 				}
 			}
@@ -252,7 +272,7 @@ func findNextFloorToGoTo() { //read only
 	}
 }
 
-func checkUpFromCurrent(current_floor int) bool {
+func checkUpOrdersAboveCurrentFloor(current_floor int) bool {
 
 	for checking_floor := current_floor; checking_floor <= number_of_floors; checking_floor++ {
 		for _, order := range private_orders {
@@ -265,19 +285,7 @@ func checkUpFromCurrent(current_floor int) bool {
 	return false
 }
 
-func checkDownFromTop(current_floor int) bool {
-	for checking_floor := number_of_floors; checking_floor >= current_floor; checking_floor-- {
-		for _, order := range private_orders {
-			if order.Floor == checking_floor && order.Direction == -1 {
-				next_floor = checking_floor
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func checkDownFromCurrent(current_floor int) bool {
+func checkDownOrdersBelowCurrentFloor(current_floor int) bool {
 	for checking_floor := current_floor; checking_floor >= 0; checking_floor-- {
 		for _, order := range private_orders {
 			if order.Floor == checking_floor && order.Direction == -1 {
@@ -289,7 +297,19 @@ func checkDownFromCurrent(current_floor int) bool {
 	return false
 }
 
-func checkUpFromBottom(current_floor int) bool {
+func checkDownOrdersFromTopFloor(current_floor int) bool {
+	for checking_floor := number_of_floors; checking_floor >= current_floor; checking_floor-- {
+		for _, order := range private_orders {
+			if order.Floor == checking_floor && order.Direction == -1 {
+				next_floor = checking_floor
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func checkUpOrdersFromBottomFloor(current_floor int) bool {
 
 	for checking_floor := 0; checking_floor <= current_floor; checking_floor++ {
 		for _, order := range private_orders {

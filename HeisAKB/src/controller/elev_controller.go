@@ -21,6 +21,7 @@ func InitElevController(number_of_floors int, nextFloorChan chan int,
 	init_status = true
 	n_FLOORS = number_of_floors
 	next_floor = -1
+	current_floor = -1
 	direction = datatypes.DOWN
 	dirChan <- direction
 	setMotorDirectionChan <- datatypes.DOWN
@@ -51,6 +52,7 @@ func elevController(nextFloorChan chan int, currentFloorToElevControllerChan cha
 
 		case go_to_next_floor := <-nextFloorChan:
 			fmt.Println("elevController.Case: go_to_next_floor")
+			fmt.Println("Current floor is: ", current_floor)
 			next_floor = go_to_next_floor
 			fmt.Println("Next floor is: ", next_floor)
 			goToFloor(&doorCloseChan, setMotorDirectionChan, setDoorOpenLightChan, orderFinishedChan)
@@ -60,15 +62,36 @@ func elevController(nextFloorChan chan int, currentFloorToElevControllerChan cha
 }
 
 func goToFloor(doorCloseChan *<-chan time.Time, setMotorDirectionChan chan datatypes.Direction, setDoorOpenLightChan chan bool, orderFinishedChan chan int) {
-	if next_floor == -1 {
+	/*if current_floor != -1 {
+		if next_floor == -1 {
+			fmt.Println("elev.goToFloor: Entered (next_floor == -1 && current_floor != -1)")
+			direction = datatypes.STOP
+			setMotorDirectionChan <- datatypes.STOP
+		} else if current_floor == next_floor {
+			floorReached(doorCloseChan, setMotorDirectionChan, setDoorOpenLightChan, orderFinishedChan)
+		}
+
+	}
+	if !door_open {
+		if current_floor == -1 { // if current_floor != -1 og så putte alt inni
+
+		} else if next_floor > current_floor {
+			direction = datatypes.UP
+			setMotorDirectionChan <- datatypes.UP
+
+		} else if next_floor < current_floor {
+			direction = datatypes.DOWN
+			setMotorDirectionChan <- datatypes.DOWN
+		}
+	}*/
+	if next_floor == -1 && current_floor != -1 {
+		fmt.Println("elev.goToFloor: Entered (next_floor == -1 && current_floor != -1)")
 		direction = datatypes.STOP
 		setMotorDirectionChan <- datatypes.STOP
-
-	} else if next_floor == current_floor {
+	} else if current_floor == next_floor && current_floor != -1 {
 		floorReached(doorCloseChan, setMotorDirectionChan, setDoorOpenLightChan, orderFinishedChan)
-
 	} else if !door_open {
-		if current_floor == -1 {
+		if current_floor == -1 { // if current_floor != -1 og så putte alt inni
 
 		} else if next_floor > current_floor {
 			direction = datatypes.UP
@@ -88,7 +111,27 @@ func floorReached(doorCloseChan *<-chan time.Time, setMotorDirectionChan chan da
 		direction = datatypes.STOP
 		setMotorDirectionChan <- datatypes.STOP
 		init_status = false
-	} else if current_floor == next_floor {
+
+	} else if current_floor == n_FLOORS-1 {
+		setMotorDirectionChan <- datatypes.STOP
+		direction = datatypes.DOWN
+	} else if current_floor == 0 {
+		setMotorDirectionChan <- datatypes.STOP
+		direction = datatypes.UP
+	}
+	if current_floor == next_floor {
+		fmt.Println("Stopping at floor #", current_floor)
+		setMotorDirectionChan <- datatypes.STOP
+		door_open = true
+		*doorCloseChan = time.After(3 * time.Second)
+		setDoorOpenLightChan <- true
+		//påfølgende if{} er unødvendig,
+		if current_floor != -1 {
+			orderFinishedChan <- current_floor
+		}
+	}
+
+	/* else if current_floor == next_floor {
 		fmt.Println("Stopping at floor #", current_floor)
 		setMotorDirectionChan <- datatypes.STOP
 		door_open = true
@@ -103,6 +146,6 @@ func floorReached(doorCloseChan *<-chan time.Time, setMotorDirectionChan chan da
 		} else if current_floor == 0 {
 			direction = datatypes.UP
 		}
-	}
+	}*/
 
 }

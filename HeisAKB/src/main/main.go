@@ -35,13 +35,13 @@ func main() {
 	newExternalOrderChan := make(chan datatypes.ExternalOrder)
 	currentFloorToOrderManagerChan := make(chan int)
 	currentFloorToElevControllerChan := make(chan int)
-	setInternalLightsChan := make(chan datatypes.InternalOrder)
-	setExternalLightsChan := make(chan datatypes.ExternalOrder)
+	setInternalLightsChan := make(chan datatypes.InternalOrder, 10)
+	setExternalLightsChan := make(chan datatypes.ExternalOrder, 10)
 	setDoorOpenLightChan := make(chan bool)
 	setMotorDirectionChan := make(chan datatypes.Direction)
 	//network.InitNetworkHandler(shareOrderChan, receivedOrderChan, shareCostChan, receivedCostChan)
 	// (n_FLOORS, newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan, orderFinnishedChan, dirChan, receivedOrderChan, receivedCostChan, shareOrderChan, shareCostChan, nextFloorChan)
-	manager.InitOrderManager(n_FLOORS, newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan, orderFinishedChan, dirChan, receivedOrderChan, receivedCostChan, shareOrderChan, shareCostChan, nextFloorChan)
+	manager.InitOrderManager(n_FLOORS, newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan, orderFinishedChan, dirChan, receivedOrderChan, receivedCostChan, shareOrderChan, shareCostChan, nextFloorChan, setInternalLightsChan, setExternalLightsChan)
 	ioHandling.InitIo(n_FLOORS, newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan, currentFloorToElevControllerChan, setInternalLightsChan, setExternalLightsChan, setDoorOpenLightChan, setMotorDirectionChan)
 	//time.Sleep(50 * time.Millisecond) 		//mulig denne trengs!!
 	controller.InitElevController(n_FLOORS, nextFloorChan, currentFloorToElevControllerChan, doorCloseChan, dirChan, setDoorOpenLightChan, setMotorDirectionChan, orderFinishedChan) //initChan lagt til for fun
