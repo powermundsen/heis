@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
-	"math/rand"
 	//"network"
 	"os"
 	"time"
@@ -208,7 +207,7 @@ func updateSharedOrders(new_order datatypes.ExternalOrder) { //Denne tar ikke he
 }
 
 func calculateCost(order datatypes.ExternalOrder) datatypes.CostInfo {
-	cost := datatypes.CostInfo{Cost: 0, Floor: order.Floor, Direction: order.Direction, ID: rand.Intn(time.Now().Nanosecond())}
+	cost := datatypes.CostInfo{Cost: 0, Floor: order.Floor, Direction: order.Direction}
 	cost.Cost = int(math.Abs((float64(current_floor - order.Floor)))) //ha hvis current floor = -1? Bør vel aldri være -1 i orderManager -> filtrere bort -1 når man mottar på currentFloorToOrderManagerChan
 	/*if int(direction) != order.Direction {
 		cost.Cost += 2
@@ -244,9 +243,9 @@ func orderOnAuction(my_cost datatypes.CostInfo, receivedCostChan chan datatypes.
 			if (external_cost.Floor == my_cost.Floor) && (external_cost.Direction == my_cost.Direction) {
 				if external_cost.Cost < my_cost.Cost {
 					return false
-				} else if (external_cost.Cost == my_cost.Cost) && (external_cost.ID < my_cost.ID) {
+				} /*else if (external_cost.Cost == my_cost.Cost) && (external_cost.IP < my_cost.IP) {
 					return false
-				}
+				}*/
 			}
 		}
 	}

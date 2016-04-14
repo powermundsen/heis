@@ -18,5 +18,5 @@ type CostInfo struct {
 	Cost      int
 	Floor     int
 	Direction int
-	ID        int
+	//IP        int
 }
