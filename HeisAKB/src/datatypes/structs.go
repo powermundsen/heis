@@ -2,8 +2,7 @@ package datatypes
 
 type InternalOrder struct {
 	Executed_order bool
-	Floor int
-
+	Floor          int
 }
 
 //Jeg endret parametrene i strukten til å ha stor bokstav, da kan vi deklarere nye instanser slik

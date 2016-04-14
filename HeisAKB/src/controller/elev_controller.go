@@ -33,12 +33,13 @@ func elevController(nextFloorChan chan int, currentFloorToElevControllerChan cha
 	setDoorOpenLightChan chan bool, setMotorDirectionChan chan datatypes.Direction) {
 
 	for {
-		fmt.Println("doorCloseChan:", doorCloseChan)
+		//fmt.Println("doorCloseChan:", doorCloseChan)
 		select {
 		case <-doorCloseChan:
-			fmt.Println("elevController.Case: doorCloseChan")
+			//fmt.Println("elevController.Case: doorCloseChan")
 			door_open = false
 			setDoorOpenLightChan <- false
+			goToFloor(&doorCloseChan, setMotorDirectionChan, setDoorOpenLightChan)
 
 		case floor_reached := <-currentFloorToElevControllerChan:
 			fmt.Println("elevController.Case: floor_reached")
@@ -67,7 +68,9 @@ func goToFloor(doorCloseChan *<-chan time.Time, setMotorDirectionChan chan datat
 		floorReached(doorCloseChan, setMotorDirectionChan, setDoorOpenLightChan)
 
 	} else if !door_open {
-		if next_floor > current_floor {
+		if current_floor == -1 {
+
+		} else if next_floor > current_floor {
 			direction = 1
 			setMotorDirectionChan <- datatypes.UP
 

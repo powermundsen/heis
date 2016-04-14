@@ -12,9 +12,8 @@ var previous_floor int
 
 func InitIo(number_of_floors int, newInternalOrderChan chan datatypes.InternalOrder,
 	newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int,
-	currentFloorToElevControllerChan chan int, setInternalLightsChan chan datatypes.InternalOrder, 
-	setExternalLightsChan chan datatypes.ExternalOrder, setDoorOpenLightChan chan bool, 
-	setMotorDirectionChan chan datatypes.Direction) {
+	currentFloorToElevControllerChan chan int, setInternalLightsChan chan datatypes.InternalOrder, setExternalLightsChan chan datatypes.ExternalOrder,
+	setDoorOpenLightChan chan bool, setMotorDirectionChan chan datatypes.Direction) {
 	if driver.Elevator_init() == 0 {
 		fmt.Println("Could not connect to IO")
 		return
@@ -38,17 +37,19 @@ func ioManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrd
 			readAllExternalButtons(newExternalOrderChan)
 			readCurrentFloor(currentFloorToElevControllerChan, currentFloorToOrderManagerChan)
 
-		case internal_orders := <-setInternalLightsChan:
-			setInternalOrderLights(internal_orders)
+		case internal_order := <-setInternalLightsChan:
+			fmt.Println("ioManager.Case: internal_order")
+			setInternalOrderLights(internal_order)
 
-		case shared_orders := <-setExternalLightsChan:
-			setExternalOrderLights(shared_orders)
+		case external_order := <-setExternalLightsChan:
+			fmt.Println("ioManager.Case: external_order")
+			setExternalOrderLights(external_order)
 
 		case set_door_open_light := <-setDoorOpenLightChan:
 			setDoorOpenLight(set_door_open_light)
 
 		case motor_direction := <-setMotorDirectionChan:
-			fmt.Println("case motordirection")
+			fmt.Println("ioManager.Case: motordirection")
 			setMotorDirection(motor_direction)
 		}
 	}
@@ -102,55 +103,37 @@ func setDoorOpenLight(set_door_open_light bool) {
 
 func setMotorDirection(motor_direction datatypes.Direction) {
 	if motor_direction == datatypes.UP {
-		driver.Elevator_set_motor_direction(driver.MOTOR_DIRECTION_UP)
+		driver.Elevator_set_motor_direction(1)
 	} else if motor_direction == datatypes.DOWN {
-		driver.Elevator_set_motor_direction(driver.MOTOR_DIRECTION_DOWN)
+		driver.Elevator_set_motor_direction(-1)
 	} else {
-		driver.Elevator_set_motor_direction(driver.MOTOR_DIRECTION_STOP)
+		driver.Elevator_set_motor_direction(0)
 	}
-}
-/*
-func setInternalOrderLights(set_internal_lights []bool) {
-	for i := 0; i < n_floors+1; i++ {
-		driver.Elevator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, i, set_internal_lights[i])
-	}
+
 }
 
-
-func setExternalOrderLights(set_external_lights []bool) {
-	for i := 0; i < n_floors+1; i++ {
-		driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, i, set_external_lights[i])
-		driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, i, set_external_lights[n_floors+i])
-	}
-}
-*/
-//LEGGES INN IGJEN ETTER TESTING MED BOOL-VERSJON
-
-func setExternalOrderLights(external_orders datatypes.ExternalOrder) { 
-	if external_orders.Executed_order == true {
-		if items.Direction == 1 {
-			driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, items.Floor, true)
-		}
-		if items.Direction == -1 {
-			driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, items.Floor, true)
-		}
-	}
-
-	if external_orders.Executed_order == false {
-		if items.Direction == 1 {
-			driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, items.Floor, false)
-		} else { items.Direction == -1 {
-			driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, items.Floor, false)
-		}
-		}
+func setInternalOrderLights(internal_order datatypes.InternalOrder) {
+	if internal_order.Executed_order {
+		driver.Elevator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, internal_order.Floor, false)
+	} else {
+		driver.Elevator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, internal_order.Floor, true)
 	}
 }
 
+func setExternalOrderLights(external_order datatypes.ExternalOrder) {
 
-func setInternalOrderLights(internal_orders datatypes.InternalOrder) {
-	if internal_orders.Executed_order == true {
-		driver.Elevator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, items.Floor, false)
-	} else { internal_orders.Executed_order == false {
-		driver.Elevator_set_button_lamp(driver.BUTTON_INSIDE_COMMAND, items.Floor, true)
+	if external_order.Direction == 1 {
+		if external_order.Executed_order {
+			driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, external_order.Floor, false)
+		} else {
+			driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_UP, external_order.Floor, true)
+		}
+	} else if external_order.Direction == -1 {
+		if external_order.Executed_order {
+			driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, external_order.Floor, false)
+		} else {
+			driver.Elevator_set_button_lamp(driver.BUTTON_OUTSIDE_DOWN, external_order.Floor, true)
+		}
+
 	}
 }
