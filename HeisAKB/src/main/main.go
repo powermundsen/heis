@@ -10,6 +10,7 @@ import (
 	//"driver"
 	"ioHandling"
 	"time"
+	"os"
 )
 
 const n_FLOORS int = 4
@@ -37,7 +38,9 @@ func main() {
 	setDoorOpenLightChan := make(chan bool)
 	setMotorDirectionChan := make(chan datatypes.Direction)
 
-	network.InitNetworkHandler(shareOrderChan, receivedOrderChan, shareCostChan, receivedCostChan)
+	if !network.InitNetworkHandler(shareOrderChan, receivedOrderChan, shareCostChan, receivedCostChan){
+		os.Exit(1)
+	}
 	manager.InitOrderManager(n_FLOORS, newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan, orderFinishedChan, dirChan, receivedOrderChan, receivedCostChan, shareOrderChan, shareCostChan, nextFloorChan, setInternalLightsChan, setExternalLightsChan)
 	ioHandling.InitIo(n_FLOORS, newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan, currentFloorToElevControllerChan, setInternalLightsChan, setExternalLightsChan, setDoorOpenLightChan, setMotorDirectionChan)
 	//time.Sleep(50 * time.Millisecond) 		//mulig denne trengs!!

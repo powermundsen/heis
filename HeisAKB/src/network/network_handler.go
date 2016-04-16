@@ -21,11 +21,13 @@ const PORTNUM_COST = ":8100"
 const NUMBER_OF_BROADCAST = 1
 
 func InitNetworkHandler(shareOrderChan chan datatypes.ExternalOrder, receivedOrderChan chan datatypes.ExternalOrder,
-	shareCostChan chan datatypes.CostInfo, receivedCostChan chan datatypes.CostInfo) {
+	shareCostChan chan datatypes.CostInfo, receivedCostChan chan datatypes.CostInfo) bool {
 	if initSockets(BROADCAST_IP, PORTNUM_COST, PORTNUM_ORDER) == false {
-		return
+		fmt.Println("networkHandler: Init failed")
+		return false
 	} else {
 		go networkHandler(shareOrderChan, receivedOrderChan, shareCostChan, receivedCostChan)
+		return true
 	}
 }
 
@@ -59,7 +61,7 @@ func initSockets(BROADCAST_IP string, PORTNUM_COST string, PORTNUM_ORDER string)
 
 	broadcast_order_conn, err = net.DialUDP("udp", nil, broadcast_udp_addr)
 	if err != nil {
-		log.Println("Could not establish UDP connection. Enter single eleveator mode. \n", err)
+		log.Println("Could not establish UDP connection. Refusing to start. \n", err)
 		return false
 	}
 
