@@ -14,6 +14,7 @@ var broadcast_order_conn *net.UDPConn
 var receive_order_conn *net.UDPConn
 var broadcast_cost_conn *net.UDPConn
 var receive_cost_conn *net.UDPConn
+var elevator_ip net.IP
 
 const BROADCAST_IP = "255.255.255.255"
 const PORTNUM_ORDER = ":7100"
@@ -22,6 +23,7 @@ const NUMBER_OF_BROADCAST = 1
 
 func InitNetworkHandler(shareOrderChan chan datatypes.ExternalOrder, receivedOrderChan chan datatypes.ExternalOrder,
 	shareCostChan chan datatypes.CostInfo, receivedCostChan chan datatypes.CostInfo) bool {
+	elevator_ip = getLocalIp()
 	if initSockets(BROADCAST_IP, PORTNUM_COST, PORTNUM_ORDER) == false {
 		fmt.Println("networkHandler: Init failed")
 		return false
@@ -118,8 +120,8 @@ func listenForExternalOrder(receivedOrderChan chan datatypes.ExternalOrder) {
 			log.Println("Error with Unmarshal \t", err)
 		}
 		// HER GJORDE JEG EN ENDRING OG TESTER NÅ PÅ OM DET ER SAMME IP FØR DEN SENDER TIL receivedOrderChan
-		our_ip := getLocalIp()
-		if string(received_ip.IP) != string(our_ip) {
+		//our_ip := getLocalIp()
+		if string(received_ip.IP) != string(elevator_ip) {
 			fmt.Println("Network.listenforexternalorder: receiving order")
 			receivedOrderChan <- external_order
 			buffer = clearBuffer(buffer, len)
@@ -175,8 +177,8 @@ func listenForCostUpdate(receivedCostChan chan datatypes.CostInfo) {
 			log.Println("Error with Unmarshal \t", err)
 		}
 
-		our_ip := getLocalIp()
-		if string(received_ip.IP) != string(our_ip) {
+		//our_ip := getLocalIp()
+		if string(received_ip.IP) != string(elevator_ip) {
 			fmt.Println("Network.listenForCostUpdate: receiving cost")
 			receivedCostChan <- cost_info
 			buffer = clearBuffer(buffer, len)

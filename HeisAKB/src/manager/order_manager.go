@@ -40,6 +40,7 @@ func InitOrderManager(n_FLOORS int, newInternalOrderChan chan datatypes.Internal
 	next_floor = -1
 	number_of_floors = n_FLOORS
 	direction = datatypes.DOWN
+	rand.Seed(time.Now().UTC().UnixNano())
 
 	restoreOrders(&private_orders)
 	fmt.Println("Private orders from file are:", private_orders)
@@ -120,7 +121,7 @@ func handleSharedOrder(order datatypes.ExternalOrder, received_order bool, share
 
 	if !(order.Executed_order) {
 		cost := calculateCost(order)
-		fmt.Println("Cost: ", cost.Cost)
+		fmt.Println("Cost blaaaah: ", cost.Cost)
 		fmt.Println(" ")
 		shareCostChan <- cost
 		//setExternalLightsChan <- //senddetsommåsendes
@@ -236,10 +237,10 @@ func updateSharedOrders(new_order datatypes.ExternalOrder) { //Denne tar ikke he
 
 	} else {
 		for items := range shared_orders_copy {
-			if shared_orders_copy[items] == new_order {
+			if shared_orders_copy[items].Floor == new_order.Floor && shared_orders_copy[items].Direction == new_order.Direction {
 				already_added = true
 			}
-		} //LEGG TIL ordre slik som før
+		}
 		if already_added == false {
 			shared_orders_copy = append(shared_orders_copy, new_order)
 		}
@@ -249,7 +250,7 @@ func updateSharedOrders(new_order datatypes.ExternalOrder) { //Denne tar ikke he
 }
 
 func calculateCost(order datatypes.ExternalOrder) datatypes.CostInfo {
-	cost := datatypes.CostInfo{Cost: 0, Floor: order.Floor, Direction: order.Direction, ID: rand.Intn(time.Now().Nanosecond())}
+	cost := datatypes.CostInfo{Cost: 0, Floor: order.Floor, Direction: order.Direction, ID: rand.Intn(int(time.Now().UnixNano()))}
 	cost.Cost = current_floor - order.Floor 
 	if cost.Cost < 0 {
 		if int(direction) != order.Direction {
@@ -276,9 +277,13 @@ func orderOnAuction(my_cost datatypes.CostInfo, receivedCostChan chan datatypes.
 	for {
 		select {
 		case <-time.After(time.Millisecond * 500): //Tiden for timeout må finnes ved prøving/feiling
+			fmt.Println("  ")
+			fmt.Println("Order won!")
 			fmt.Println("Auction timed out")
+			fmt.Println("  ")
 			return true
 		case external_cost = <-receivedCostChan:
+			fmt.Println("Evaluating external cost", external_cost)
 			if (external_cost.Floor == my_cost.Floor) && (external_cost.Direction == my_cost.Direction) {
 				if external_cost.Cost < my_cost.Cost {
 					return false

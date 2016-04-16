@@ -90,6 +90,7 @@ func detectAndSendExternalButtonCall(newExternalOrderChan chan datatypes.Externa
 					external_button_control_variable = order
 					external_button_control_variable.Timestamp = time.Now().Unix()
 					fmt.Println("::::::::::::ORDER TIMESTAMP::::::::::::",external_button_control_variable.Timestamp)
+					//return
 
 				} else if ((time.Now().Unix() - external_button_control_variable.Timestamp) > 2) {
 					fmt.Println("::::::::::::REALTIME TIMESTAMP::::::::::::", time.Now().Unix())
@@ -98,6 +99,8 @@ func detectAndSendExternalButtonCall(newExternalOrderChan chan datatypes.Externa
 					external_button_control_variable.Timestamp = time.Now().Unix()
 					newExternalOrderChan <- order
 				}
+				return
+				fmt.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------------")
 			}
 		}
 	}
