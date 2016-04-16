@@ -29,7 +29,7 @@ func main() {
 
 	// InitIO
 	newInternalOrderChan := make(chan datatypes.InternalOrder)
-	newExternalOrderChan := make(chan datatypes.ExternalOrder, 10)
+	newExternalOrderChan := make(chan datatypes.ExternalOrder, 2)
 	currentFloorToOrderManagerChan := make(chan int)
 	currentFloorToElevControllerChan := make(chan int)
 	setInternalLightsChan := make(chan datatypes.InternalOrder, 10)

@@ -22,7 +22,8 @@ func InitIo(number_of_floors int, newInternalOrderChan chan datatypes.InternalOr
 	fmt.Println("IO init done")
 	n_floors := number_of_floors
 	previous_floor = -1
-	external_button_control_variable = datatypes.ExternalOrder{New_order: true, Executed_order: false, Floor: -1, Direction: 0}
+	external_button_control_variable = datatypes.ExternalOrder{New_order: true, Executed_order: false, Floor: -1, Direction: 0, Timestamp: time.Now().Unix()}
+	fmt.Println("::::::::::::TImestamp er::::::::::::",external_button_control_variable.Timestamp)
 
 	go ioManager(newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan,
 		currentFloorToElevControllerChan, setInternalLightsChan, setExternalLightsChan,
@@ -84,12 +85,18 @@ func detectAndSendExternalButtonCall(newExternalOrderChan chan datatypes.Externa
 				} else {
 					order.Direction = int(datatypes.DOWN)
 				}
-				/*
-					Legger til if her
-				*/
-				if order != external_button_control_variable{
+				if ((order.Floor != external_button_control_variable.Floor) && (order.Direction != external_button_control_variable.Direction)){
 					newExternalOrderChan <- order
 					external_button_control_variable = order
+					external_button_control_variable.Timestamp = time.Now().Unix()
+					fmt.Println("::::::::::::ORDER TIMESTAMP::::::::::::",external_button_control_variable.Timestamp)
+
+				} else if ((time.Now().Unix() - external_button_control_variable.Timestamp) > 2) {
+					fmt.Println("::::::::::::REALTIME TIMESTAMP::::::::::::", time.Now().Unix())
+					//fmt.Println(external_button_control_variable.Timestamp)
+					//fmt.Println("------------------------------------------------------------")
+					external_button_control_variable.Timestamp = time.Now().Unix()
+					newExternalOrderChan <- order
 				}
 			}
 		}
