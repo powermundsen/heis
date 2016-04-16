@@ -49,7 +49,7 @@ func InitOrderManager(n_FLOORS int, newInternalOrderChan chan datatypes.Internal
 }
 
 func orderManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int, orderFinishedChan chan int, dirChan chan datatypes.Direction, receivedOrderChan chan datatypes.ExternalOrder, receivedCostChan chan datatypes.CostInfo, shareOrderChan chan datatypes.ExternalOrder, shareCostChan chan datatypes.CostInfo, nextFloorChan chan int, setInternalLightsChan chan datatypes.InternalOrder, setExternalLightsChan chan datatypes.ExternalOrder) {
-
+	//previous_external_order := -1
 	for {
 		select {
 		case new_internal_order := <-newInternalOrderChan:
@@ -57,9 +57,12 @@ func orderManager(newInternalOrderChan chan datatypes.InternalOrder, newExternal
 			setInternalLightsChan <- new_internal_order
 
 		case new_external_order := <-newExternalOrderChan:
-			received_order := false
-			handleSharedOrder(new_external_order, received_order, shareCostChan, receivedCostChan, shareOrderChan)
-			setExternalLightsChan <- new_external_order
+			//if new_external_order.Floor != previous_external_order{
+				received_order := false
+				handleSharedOrder(new_external_order, received_order, shareCostChan, receivedCostChan, shareOrderChan)
+				setExternalLightsChan <- new_external_order
+				//previous_external_order = new_external_order.Floor
+			//}			
 
 		case received_network_order := <-receivedOrderChan:
 			received_order := true
@@ -110,6 +113,8 @@ func handleSharedOrder(order datatypes.ExternalOrder, received_order bool, share
 
 	if !(order.Executed_order) {
 		cost := calculateCost(order)
+		fmt.Println("Cost: ", cost.Cost)
+		fmt.Println(" ")
 		shareCostChan <- cost
 		//setExternalLightsChan <- //senddetsommåsendes
 		add_order := orderOnAuction(cost, receivedCostChan)
@@ -209,10 +214,7 @@ func updateSharedOrders(new_order datatypes.ExternalOrder) { //Denne tar ikke he
 
 func calculateCost(order datatypes.ExternalOrder) datatypes.CostInfo {
 	cost := datatypes.CostInfo{Cost: 0, Floor: order.Floor, Direction: order.Direction, ID: rand.Intn(time.Now().Nanosecond())}
-	cost.Cost = int(math.Abs((float64(current_floor - order.Floor)))) //ha hvis current floor = -1? Bør vel aldri være -1 i orderManager -> filtrere bort -1 når man mottar på currentFloorToOrderManagerChan
-	/*if int(direction) != order.Direction {
-		cost.Cost += 2
-	}*/
+	cost.Cost = current_floor - order.Floor 
 	if cost.Cost < 0 {
 		if int(direction) != order.Direction {
 			cost.Cost = int(math.Abs(float64(cost.Cost))) + 2

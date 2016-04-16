@@ -7,8 +7,9 @@ import (
 	"time"
 )
 
-var n_floors int
+//var n_floors int
 var previous_floor int
+var external_button_control_variable datatypes.ExternalOrder
 
 func InitIo(number_of_floors int, newInternalOrderChan chan datatypes.InternalOrder,
 	newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int,
@@ -19,43 +20,47 @@ func InitIo(number_of_floors int, newInternalOrderChan chan datatypes.InternalOr
 		return
 	}
 	fmt.Println("IO init done")
-	n_floors = number_of_floors
+	n_floors := number_of_floors
 	previous_floor = -1
+	external_button_control_variable = datatypes.ExternalOrder{New_order: true, Executed_order: false, Floor: -1, Direction: 0}
+
 	go ioManager(newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan,
 		currentFloorToElevControllerChan, setInternalLightsChan, setExternalLightsChan,
-		setDoorOpenLightChan, setMotorDirectionChan)
+		setDoorOpenLightChan, setMotorDirectionChan, n_floors)
 }
 
 func ioManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrderChan chan datatypes.ExternalOrder,
 	currentFloorToOrderManagerChan chan int, currentFloorToElevControllerChan chan int,
 	setInternalLightsChan chan datatypes.InternalOrder, setExternalLightsChan chan datatypes.ExternalOrder,
-	setDoorOpenLightChan chan bool, setMotorDirectionChan chan datatypes.Direction) {
+	setDoorOpenLightChan chan bool, setMotorDirectionChan chan datatypes.Direction, n_floors int) {
+	
+
 	for {
 		select {
 		case <-time.After(100 * time.Millisecond):
-			readAllInternalButtons(newInternalOrderChan)
-			readAllExternalButtons(newExternalOrderChan)
+			detectAndSendInternalButtonCall(newInternalOrderChan, n_floors)
+			detectAndSendExternalButtonCall(newExternalOrderChan, n_floors)
 			readCurrentFloor(currentFloorToElevControllerChan, currentFloorToOrderManagerChan)
 
 		case internal_order := <-setInternalLightsChan:
-			fmt.Println("ioManager.Case: internal_order")
+			fmt.Println("ioManager.Case: setInternalLights")
 			setInternalOrderLights(internal_order)
 
 		case external_order := <-setExternalLightsChan:
-			fmt.Println("ioManager.Case: external_order")
+			fmt.Println("ioManager.Case: setExternalLights")
 			setExternalOrderLights(external_order)
 
 		case set_door_open_light := <-setDoorOpenLightChan:
 			setDoorOpenLight(set_door_open_light)
 
 		case motor_direction := <-setMotorDirectionChan:
-			fmt.Println("ioManager.Case: motordirection")
+			fmt.Println("ioManager.Case: setMotordirection")
 			setMotorDirection(motor_direction)
 		}
 	}
 }
 
-func readAllInternalButtons(newInternalOrderChan chan datatypes.InternalOrder) {
+func detectAndSendInternalButtonCall(newInternalOrderChan chan datatypes.InternalOrder, n_floors int) {
 	var order datatypes.InternalOrder
 	for floor := 0; floor < n_floors; floor++ {
 		if driver.Elevator_is_button_pushed(driver.BUTTON_INSIDE_COMMAND, floor) {
@@ -65,7 +70,7 @@ func readAllInternalButtons(newInternalOrderChan chan datatypes.InternalOrder) {
 	}
 }
 
-func readAllExternalButtons(newExternalOrderChan chan datatypes.ExternalOrder) {
+func detectAndSendExternalButtonCall(newExternalOrderChan chan datatypes.ExternalOrder, n_floors int) {
 	var order datatypes.ExternalOrder
 	order.New_order = true
 	order.Executed_order = false
@@ -79,13 +84,19 @@ func readAllExternalButtons(newExternalOrderChan chan datatypes.ExternalOrder) {
 				} else {
 					order.Direction = int(datatypes.DOWN)
 				}
-				newExternalOrderChan <- order
+				/*
+					Legger til if her
+				*/
+				if order != external_button_control_variable{
+					newExternalOrderChan <- order
+					external_button_control_variable = order
+				}
 			}
 		}
 	}
 }
 
-func readCurrentFloor(currentFloorToElevControllerChan chan int, currentFloorToOrderManagerChan chan int) {
+func readCurrentFloor(currentFloorToElevControllerChan chan int, currentFloorToOrderManagerChan chan int){
 	current_floor := driver.Elevator_get_floor_sensor_signal()
 	if current_floor != previous_floor {
 		if current_floor != -1 {
@@ -95,7 +106,6 @@ func readCurrentFloor(currentFloorToElevControllerChan chan int, currentFloorToO
 		currentFloorToOrderManagerChan <- current_floor
 		previous_floor = current_floor
 	}
-
 }
 
 func setDoorOpenLight(set_door_open_light bool) {
