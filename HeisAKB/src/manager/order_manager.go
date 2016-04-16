@@ -67,10 +67,21 @@ func orderManager(newInternalOrderChan chan datatypes.InternalOrder, newExternal
 				//previous_external_order = new_external_order.Floor
 			//}			
 
+		/*case received_network_order := <-receivedOrderChan:
+			received_order := true
+			handleSharedOrder(received_network_order, received_order, shareCostChan, receivedCostChan, shareOrderChan)
+			setExternalLightsChan <- received_network_order*/
 		case received_network_order := <-receivedOrderChan:
 			received_order := true
 			handleSharedOrder(received_network_order, received_order, shareCostChan, receivedCostChan, shareOrderChan)
-			setExternalLightsChan <- received_network_order
+			if received_network_order.Executed_order{
+				external_order_up := datatypes.ExternalOrder{New_order: false, Executed_order: true, Floor: received_network_order.Floor, Direction: 1}
+				external_order_down := datatypes.ExternalOrder{New_order: false, Executed_order: true, Floor: received_network_order.Floor, Direction: -1}
+				setExternalLightsChan <- external_order_up
+				setExternalLightsChan <-  external_order_down
+			} else {
+				setExternalLightsChan <- received_network_order
+			}
 
 		case finished_order := <-orderFinishedChan:
 			external_order_up := datatypes.ExternalOrder{New_order: false, Executed_order: true, Floor: finished_order, Direction: 1}
