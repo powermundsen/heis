@@ -174,7 +174,7 @@ func updatePrivateOrders(new_order datatypes.ExternalOrder) {
 }
 
 func updateSharedOrders(new_order datatypes.ExternalOrder) { //Denne tar ikke hensyn til om en ordre er utført for å gå opp en etasje men sletter hele etasjen
-	fmt.Println("Entered manager.updateSharedOrders")
+	//fmt.Println("Entered manager.updateSharedOrders")
 	shared_orders_copy := make([]datatypes.ExternalOrder, 0)
 	shared_orders_copy = shared_orders
 	already_added := false
@@ -253,7 +253,7 @@ func orderOnAuction(my_cost datatypes.CostInfo, receivedCostChan chan datatypes.
 }
 
 func findNextFloorToGoTo() { //read only
-	fmt.Println("Entered manager.findNextFloorToGoTo")
+	//fmt.Println("Entered manager.findNextFloorToGoTo")
 	original_direction := direction
 
 	if len(private_orders) == 0 {
