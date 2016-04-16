@@ -21,6 +21,8 @@ var current_floor int
 var shared_orders []datatypes.ExternalOrder
 var private_orders []datatypes.ExternalOrder
 
+const ORDER_TIMELIMIT = 20
+
 func InitOrderManager(n_FLOORS int, newInternalOrderChan chan datatypes.InternalOrder,
 	newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int,
 	orderFinishedChan chan int, dirChan chan datatypes.Direction, receivedOrderChan chan datatypes.ExternalOrder,
@@ -46,6 +48,7 @@ func InitOrderManager(n_FLOORS int, newInternalOrderChan chan datatypes.Internal
 
 	go orderManager(newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan, orderFinishedChan, dirChan, receivedOrderChan, receivedCostChan,
 		shareOrderChan, shareCostChan, nextFloorChan, setInternalLightsChan, setExternalLightsChan) //mangler setExternalLightsChan
+	go handleExpiredOrder(newExternalOrderChan, orderFinishedChan)
 }
 
 func orderManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int, orderFinishedChan chan int, dirChan chan datatypes.Direction, receivedOrderChan chan datatypes.ExternalOrder, receivedCostChan chan datatypes.CostInfo, shareOrderChan chan datatypes.ExternalOrder, shareCostChan chan datatypes.CostInfo, nextFloorChan chan int, setInternalLightsChan chan datatypes.InternalOrder, setExternalLightsChan chan datatypes.ExternalOrder) {
@@ -105,6 +108,7 @@ func orderManager(newInternalOrderChan chan datatypes.InternalOrder, newExternal
 
 func handleSharedOrder(order datatypes.ExternalOrder, received_order bool, shareCostChan chan datatypes.CostInfo, receivedCostChan chan datatypes.CostInfo, shareOrderChan chan datatypes.ExternalOrder) {
 	//mangler setExternalLightsChan og newInternalOrderChan
+	order.Timestamp = time.Now().Unix()
 	if !(received_order) {
 		fmt.Println("Manager.handlesharedorder: sharing order")
 		shareOrderChan <- order
@@ -126,8 +130,8 @@ func handleSharedOrder(order datatypes.ExternalOrder, received_order bool, share
 }
 
 func handleInternalOrder(order datatypes.InternalOrder) {
-	converted_order_1 := datatypes.ExternalOrder{New_order: true, Executed_order: order.Executed_order, Floor: order.Floor, Direction: 1} //Her setter jeg New_order = true og Direction -1 som dummies fordi vi ikke for lov til å sette nil
-	converted_order_2 := datatypes.ExternalOrder{New_order: true, Executed_order: order.Executed_order, Floor: order.Floor, Direction: -1}
+	converted_order_1 := datatypes.ExternalOrder{New_order: true, Executed_order: order.Executed_order, Floor: order.Floor, Direction: 1, Timestamp: (time.Now().Unix() + 3600)} //Her setter jeg New_order = true og Direction -1 som dummies fordi vi ikke for lov til å sette nil
+	converted_order_2 := datatypes.ExternalOrder{New_order: true, Executed_order: order.Executed_order, Floor: order.Floor, Direction: -1, Timestamp: (time.Now().Unix() + 3600)}
 	updatePrivateOrders(converted_order_1)
 	updatePrivateOrders(converted_order_2)
 
@@ -139,6 +143,30 @@ func handleFinishedOrder(order datatypes.ExternalOrder, shareOrderChan chan data
 	updateSharedOrders(order)
 	shareOrderChan <- order
 	findNextFloorToGoTo()
+}
+
+func handleExpiredOrder(newExternalOrderChan chan datatypes.ExternalOrder, orderFinishedChan chan int){
+	for{
+		select{
+			case <- time.After(5 * time.Second):
+				shared_orders_copy := make([]datatypes.ExternalOrder, 0)
+				shared_orders_copy = shared_orders
+
+				for items := range shared_orders_copy {
+					if (time.Now().Unix() - shared_orders_copy[items].Timestamp) > ORDER_TIMELIMIT {
+						order := shared_orders_copy[items]
+						//si til andre at den er håndert, kall handleFinishedOrder
+						order.Executed_order = true
+						orderFinishedChan <- order.Floor
+
+						//del med andre heiser, newExternalOrderChan
+						order.Executed_order = false
+						order.New_order = true
+						newExternalOrderChan <- order
+					}
+			}
+		}
+	}
 }
 
 func updatePrivateOrders(new_order datatypes.ExternalOrder) {

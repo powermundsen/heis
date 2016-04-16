@@ -12,6 +12,7 @@ type ExternalOrder struct {
 	Executed_order bool
 	Floor          int
 	Direction      int
+	Timestamp		int64
 }
 
 type CostInfo struct {

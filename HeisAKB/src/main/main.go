@@ -25,11 +25,11 @@ func main() {
 	receivedOrderChan := make(chan datatypes.ExternalOrder)
 	shareCostChan := make(chan datatypes.CostInfo)
 	receivedCostChan := make(chan datatypes.CostInfo)
-	orderFinishedChan := make(chan int)
+	orderFinishedChan := make(chan int, 10)
 
 	// InitIO
 	newInternalOrderChan := make(chan datatypes.InternalOrder)
-	newExternalOrderChan := make(chan datatypes.ExternalOrder)
+	newExternalOrderChan := make(chan datatypes.ExternalOrder, 10)
 	currentFloorToOrderManagerChan := make(chan int)
 	currentFloorToElevControllerChan := make(chan int)
 	setInternalLightsChan := make(chan datatypes.InternalOrder, 10)
