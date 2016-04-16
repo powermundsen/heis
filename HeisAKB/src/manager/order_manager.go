@@ -52,7 +52,6 @@ func InitOrderManager(n_FLOORS int, newInternalOrderChan chan datatypes.Internal
 }
 
 func orderManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrderChan chan datatypes.ExternalOrder, currentFloorToOrderManagerChan chan int, orderFinishedChan chan int, dirChan chan datatypes.Direction, receivedOrderChan chan datatypes.ExternalOrder, receivedCostChan chan datatypes.CostInfo, shareOrderChan chan datatypes.ExternalOrder, shareCostChan chan datatypes.CostInfo, nextFloorChan chan int, setInternalLightsChan chan datatypes.InternalOrder, setExternalLightsChan chan datatypes.ExternalOrder) {
-	//previous_external_order := -1
 	for {
 		select {
 		case new_internal_order := <-newInternalOrderChan:
@@ -60,17 +59,10 @@ func orderManager(newInternalOrderChan chan datatypes.InternalOrder, newExternal
 			setInternalLightsChan <- new_internal_order
 
 		case new_external_order := <-newExternalOrderChan:
-			//if new_external_order.Floor != previous_external_order{
 				received_order := false
 				handleSharedOrder(new_external_order, received_order, shareCostChan, receivedCostChan, shareOrderChan)
 				setExternalLightsChan <- new_external_order
-				//previous_external_order = new_external_order.Floor
-			//}			
-
-		/*case received_network_order := <-receivedOrderChan:
-			received_order := true
-			handleSharedOrder(received_network_order, received_order, shareCostChan, receivedCostChan, shareOrderChan)
-			setExternalLightsChan <- received_network_order*/
+		
 		case received_network_order := <-receivedOrderChan:
 			received_order := true
 			handleSharedOrder(received_network_order, received_order, shareCostChan, receivedCostChan, shareOrderChan)
@@ -111,7 +103,7 @@ func orderManager(newInternalOrderChan chan datatypes.InternalOrder, newExternal
 				direction = update_direction
 			}
 
-		case <-time.After(250 * time.Millisecond): //dette vil skape bug
+		case <-time.After(250 * time.Millisecond):
 			nextFloorChan <- next_floor
 		}
 	}
@@ -202,11 +194,16 @@ func updatePrivateOrders(new_order datatypes.ExternalOrder) {
 		private_orders = remaining_orders
 
 	} else {
-		for items := range private_orders_copy {
+		/*for items := range private_orders_copy {
 			if private_orders_copy[items] == new_order {
 				already_added = true
 			}
-		} //LEGG TIL ordre slik som før
+		}*/ //LEGG TIL ordre slik som før
+		for items := range private_orders_copy {
+			if private_orders_copy[items].Floor == new_order.Floor && private_orders_copy[items].Direction == new_order.Direction {
+				already_added = true
+			}
+		}
 		if already_added == false {
 			private_orders_copy = append(private_orders_copy, new_order)
 		}
