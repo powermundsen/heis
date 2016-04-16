@@ -2,8 +2,6 @@ package controller
 
 import (
 	"datatypes"
-	//."driver"
-	"fmt"
 	"time"
 )
 
@@ -26,7 +24,6 @@ func InitElevController(number_of_floors int, nextFloorChan chan int,
 	dirChan <- direction
 	setMotorDirectionChan <- datatypes.DOWN
 
-	fmt.Println("elev_controller init done")
 	go elevController(nextFloorChan, currentFloorToElevControllerChan, doorCloseChan, dirChan, setDoorOpenLightChan, setMotorDirectionChan, orderFinishedChan)
 }
 
@@ -41,7 +38,6 @@ func elevController(nextFloorChan chan int, currentFloorToElevControllerChan cha
 			goToFloor(&doorCloseChan, setMotorDirectionChan, setDoorOpenLightChan, orderFinishedChan)
 
 		case floor_reached := <-currentFloorToElevControllerChan:
-			fmt.Println("elevController.Case: floor_reached")
 			current_floor = floor_reached
 			if current_floor != -1 {
 				floorReached(&doorCloseChan, setMotorDirectionChan, setDoorOpenLightChan, orderFinishedChan)
@@ -49,10 +45,7 @@ func elevController(nextFloorChan chan int, currentFloorToElevControllerChan cha
 			}
 
 		case go_to_next_floor := <-nextFloorChan:
-			fmt.Println("elevController.Case: go_to_next_floor")
-			fmt.Println("Current floor is: ", current_floor)
 			next_floor = go_to_next_floor
-			fmt.Println("Next floor is: ", next_floor)
 			goToFloor(&doorCloseChan, setMotorDirectionChan, setDoorOpenLightChan, orderFinishedChan)
 			dirChan <- direction
 		}
@@ -62,13 +55,13 @@ func elevController(nextFloorChan chan int, currentFloorToElevControllerChan cha
 func goToFloor(doorCloseChan *<-chan time.Time, setMotorDirectionChan chan datatypes.Direction, setDoorOpenLightChan chan bool, orderFinishedChan chan int) {
 	if next_floor == -1 && current_floor != -1 {
 		setMotorDirectionChan <- datatypes.STOP
-	} else if next_floor == -1 && current_floor == -1 { //lagt til denne
+	} else if next_floor == -1 && current_floor == -1 { 
 		setMotorDirectionChan <- direction
-	} else if next_floor != -1 && current_floor == -1{ //og denne
+	} else if next_floor != -1 && current_floor == -1{ 
 		setMotorDirectionChan <- direction
 	} else if current_floor == next_floor && current_floor != -1 {
 		floorReached(doorCloseChan, setMotorDirectionChan, setDoorOpenLightChan, orderFinishedChan)
-	} else if !door_open && current_floor != -1 { //flyttet current_floor testen opp fra en if==1 inni hoved-testen, til å teste if!=1 sammen med !door_open
+	} else if !door_open && current_floor != -1 { 
 		if next_floor > current_floor {
 			direction = datatypes.UP
 			setMotorDirectionChan <- datatypes.UP
@@ -81,7 +74,6 @@ func goToFloor(doorCloseChan *<-chan time.Time, setMotorDirectionChan chan datat
 }
 
 func floorReached(doorCloseChan *<-chan time.Time, setMotorDirectionChan chan datatypes.Direction, setDoorOpenLightChan chan bool, orderFinishedChan chan int) {
-	//fmt.Println("Reached elevController.floorReached")
 	if init_status {
 		if current_floor == n_FLOORS-1 {
 			direction = datatypes.DOWN
@@ -99,12 +91,11 @@ func floorReached(doorCloseChan *<-chan time.Time, setMotorDirectionChan chan da
 		direction = datatypes.UP
 	}
 	if current_floor == next_floor {
-		fmt.Println("Stopping at floor #", current_floor)
 		setMotorDirectionChan <- datatypes.STOP
 		door_open = true
 		*doorCloseChan = time.After(3 * time.Second)
 		setDoorOpenLightChan <- true
-		//påfølgende if{} er unødvendig
+
 		if current_floor != -1 {
 			orderFinishedChan <- current_floor
 		}

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-//var n_floors int
+
 var previous_floor int
 var external_button_control_variable datatypes.ExternalOrder
 
@@ -19,11 +19,9 @@ func InitIo(number_of_floors int, newInternalOrderChan chan datatypes.InternalOr
 		fmt.Println("Could not connect to IO")
 		return
 	}
-	fmt.Println("IO init done")
 	n_floors := number_of_floors
 	previous_floor = -1
 	external_button_control_variable = datatypes.ExternalOrder{New_order: true, Executed_order: false, Floor: -1, Direction: 0, Timestamp: time.Now().Unix()}
-	fmt.Println("::::::::::::TImestamp er::::::::::::",external_button_control_variable.Timestamp)
 
 	go ioManager(newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan,
 		currentFloorToElevControllerChan, setInternalLightsChan, setExternalLightsChan,
@@ -44,18 +42,15 @@ func ioManager(newInternalOrderChan chan datatypes.InternalOrder, newExternalOrd
 			readCurrentFloor(currentFloorToElevControllerChan, currentFloorToOrderManagerChan)
 
 		case internal_order := <-setInternalLightsChan:
-			fmt.Println("ioManager.Case: setInternalLights")
 			setInternalOrderLights(internal_order)
 
 		case external_order := <-setExternalLightsChan:
-			fmt.Println("ioManager.Case: setExternalLights")
 			setExternalOrderLights(external_order)
 
 		case set_door_open_light := <-setDoorOpenLightChan:
 			setDoorOpenLight(set_door_open_light)
 
 		case motor_direction := <-setMotorDirectionChan:
-			fmt.Println("ioManager.Case: setMotordirection")
 			setMotorDirection(motor_direction)
 		}
 	}
@@ -89,18 +84,12 @@ func detectAndSendExternalButtonCall(newExternalOrderChan chan datatypes.Externa
 					newExternalOrderChan <- order
 					external_button_control_variable = order
 					external_button_control_variable.Timestamp = time.Now().Unix()
-					fmt.Println("::::::::::::ORDER TIMESTAMP::::::::::::",external_button_control_variable.Timestamp)
-					//return
 
 				} else if ((time.Now().Unix() - external_button_control_variable.Timestamp) > 2) {
-					fmt.Println("::::::::::::REALTIME TIMESTAMP::::::::::::", time.Now().Unix())
-					//fmt.Println(external_button_control_variable.Timestamp)
-					//fmt.Println("------------------------------------------------------------")
 					external_button_control_variable.Timestamp = time.Now().Unix()
 					newExternalOrderChan <- order
 				}
 				return
-				fmt.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------------")
 			}
 		}
 	}
@@ -130,7 +119,6 @@ func setMotorDirection(motor_direction datatypes.Direction) {
 	} else {
 		driver.Elevator_set_motor_direction(0)
 	}
-
 }
 
 func setInternalOrderLights(internal_order datatypes.InternalOrder) {

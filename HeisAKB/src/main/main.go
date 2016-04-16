@@ -3,11 +3,9 @@ package main
 import (
 	"controller"
 	"datatypes"
-	//"fmt"
 	"manager"
 	"network"
 	"runtime"
-	//"driver"
 	"ioHandling"
 	"time"
 	"os"
@@ -19,7 +17,6 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	nextFloorChan := make(chan int)
-	//currentFloorChan := make(chan int)
 	var doorCloseChan <-chan time.Time
 	dirChan := make(chan datatypes.Direction)
 	shareOrderChan := make(chan datatypes.ExternalOrder)
@@ -28,7 +25,6 @@ func main() {
 	receivedCostChan := make(chan datatypes.CostInfo)
 	orderFinishedChan := make(chan int, 10)
 
-	// InitIO
 	newInternalOrderChan := make(chan datatypes.InternalOrder)
 	newExternalOrderChan := make(chan datatypes.ExternalOrder, 2)
 	currentFloorToOrderManagerChan := make(chan int)
@@ -43,11 +39,7 @@ func main() {
 	}
 	manager.InitOrderManager(n_FLOORS, newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan, orderFinishedChan, dirChan, receivedOrderChan, receivedCostChan, shareOrderChan, shareCostChan, nextFloorChan, setInternalLightsChan, setExternalLightsChan)
 	ioHandling.InitIo(n_FLOORS, newInternalOrderChan, newExternalOrderChan, currentFloorToOrderManagerChan, currentFloorToElevControllerChan, setInternalLightsChan, setExternalLightsChan, setDoorOpenLightChan, setMotorDirectionChan)
-	//time.Sleep(50 * time.Millisecond) 		//mulig denne trengs!!
-	controller.InitElevController(n_FLOORS, nextFloorChan, currentFloorToElevControllerChan, doorCloseChan, dirChan, setDoorOpenLightChan, setMotorDirectionChan, orderFinishedChan) //initChan lagt til for fun
-
-	//go network.ListenForExternalOrders(receivedOrderChan) //go network.ListenForExternalOrders(externalOrderChan)
-	//go network.ListenForInternalOrders(receivedOrderChan) //finner ikke network.ListenForInternalOrder(internalOrderChan)
+	controller.InitElevController(n_FLOORS, nextFloorChan, currentFloorToElevControllerChan, doorCloseChan, dirChan, setDoorOpenLightChan, setMotorDirectionChan, orderFinishedChan) 
 
 	select {}
 }

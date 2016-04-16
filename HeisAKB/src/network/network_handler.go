@@ -3,7 +3,6 @@ package network
 import (
 	"datatypes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"strconv"
@@ -25,7 +24,6 @@ func InitNetworkHandler(shareOrderChan chan datatypes.ExternalOrder, receivedOrd
 	shareCostChan chan datatypes.CostInfo, receivedCostChan chan datatypes.CostInfo) bool {
 	elevator_ip = getLocalIp()
 	if initSockets(BROADCAST_IP, PORTNUM_COST, PORTNUM_ORDER) == false {
-		fmt.Println("networkHandler: Init failed")
 		return false
 	} else {
 		go networkHandler(shareOrderChan, receivedOrderChan, shareCostChan, receivedCostChan)
@@ -54,8 +52,6 @@ func networkHandler(shareOrderChan chan datatypes.ExternalOrder, receivedOrderCh
 }
 
 func initSockets(BROADCAST_IP string, PORTNUM_COST string, PORTNUM_ORDER string) bool {
-
-	//Create broadcast socket for orders
 	broadcast_udp_addr, err := net.ResolveUDPAddr("udp", BROADCAST_IP+PORTNUM_ORDER)
 	if err != nil {
 		log.Println(" ResolveUDPAddr failed", err)
@@ -67,7 +63,6 @@ func initSockets(BROADCAST_IP string, PORTNUM_COST string, PORTNUM_ORDER string)
 		return false
 	}
 
-	//Create broadcast socket for cost updates
 	broadcast_udp_addr, err = net.ResolveUDPAddr("udp", BROADCAST_IP+PORTNUM_COST)
 	if err != nil {
 		log.Println("ResolveUDPAddr failed", err)
@@ -79,7 +74,6 @@ func initSockets(BROADCAST_IP string, PORTNUM_COST string, PORTNUM_ORDER string)
 		return false
 	}
 
-	//Create receiver socket for external orders
 	listen_addr, err := net.ResolveUDPAddr("udp", PORTNUM_ORDER)
 	if err != nil {
 		log.Println("ResolveUDPAddr failed ", err)
@@ -91,7 +85,6 @@ func initSockets(BROADCAST_IP string, PORTNUM_COST string, PORTNUM_ORDER string)
 		return false
 	}
 
-	//Create receiver socket for cost updates
 	listen_addr, err = net.ResolveUDPAddr("udp", PORTNUM_COST)
 	if err != nil {
 		log.Println("ResolveUDPAddr failed ", err)
@@ -119,10 +112,8 @@ func listenForExternalOrder(receivedOrderChan chan datatypes.ExternalOrder) {
 		if err != nil {
 			log.Println("Error with Unmarshal \t", err)
 		}
-		// HER GJORDE JEG EN ENDRING OG TESTER NÅ PÅ OM DET ER SAMME IP FØR DEN SENDER TIL receivedOrderChan
-		//our_ip := getLocalIp()
+
 		if string(received_ip.IP) != string(elevator_ip) {
-			fmt.Println("Network.listenforexternalorder: receiving order")
 			receivedOrderChan <- external_order
 			buffer = clearBuffer(buffer, len)
 		}
@@ -130,25 +121,6 @@ func listenForExternalOrder(receivedOrderChan chan datatypes.ExternalOrder) {
 	defer receive_order_conn.Close()
 }
 
-//Skal vi ha med denne her eller skal vi avgrense den? For nå har jeg kun testet network_handler med externe broadcasts
-/*
-func ListenForInternalOrder(receivedOrderChan chan InternalOrder){
-	buffer := make([] byte, 1024)
-	var internal_order InternalOrder
-
-	for {
-		len,received_ip,err := receive_order_conn.ReadFromUDP(buffer)
-		if err != nil{
-			log.Println("Not able to receive internal order from ",received_ip)
-		}
-		err = json.Unmarshal(buffer[0:len], &internal_order)
-		if(err != nil) {log.Println("Error with Unmarshal \t",err)}
-		receivedOrderChan <- internal_order
-		buffer = clearBuffer(buffer,len)
-	}
-	defer receive_order_conn.Close()
-}
-*/
 
 func BroadcastExternalOrder(external_order datatypes.ExternalOrder) {
 	buffer, err := json.Marshal(external_order)
@@ -156,7 +128,7 @@ func BroadcastExternalOrder(external_order datatypes.ExternalOrder) {
 		log.Println("Error with Marshal in broadcastExternalOrder() \t", err)
 	}
 	for i := 0; i < NUMBER_OF_BROADCAST; i++ {
-		_, err := broadcast_order_conn.Write(buffer) // broadcast_conn.Write(buffer)
+		_, err := broadcast_order_conn.Write(buffer)
 		if err != nil {
 			log.Println("Cannot send order over UDP \t", err)
 		}
@@ -177,9 +149,7 @@ func listenForCostUpdate(receivedCostChan chan datatypes.CostInfo) {
 			log.Println("Error with Unmarshal \t", err)
 		}
 
-		//our_ip := getLocalIp()
 		if string(received_ip.IP) != string(elevator_ip) {
-			fmt.Println("Network.listenForCostUpdate: receiving cost")
 			receivedCostChan <- cost_info
 			buffer = clearBuffer(buffer, len)
 		}
@@ -193,7 +163,7 @@ func broadcastCostUpdate(cost_info datatypes.CostInfo) {
 		log.Println("Error with Marshal in broadcastCostUpdate() \t", err)
 	}
 	for i := 0; i < NUMBER_OF_BROADCAST; i++ {
-		_, err := broadcast_cost_conn.Write(buffer) // broadcast_conn.Write(buffer)
+		_, err := broadcast_cost_conn.Write(buffer) 
 		if err != nil {
 			log.Println("Cannot send cost update over UDP \t", err)
 		}
